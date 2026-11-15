@@ -6,6 +6,7 @@
 |-----|------------|----------------------|------------------------------|-----------------------------------------------------------------------------------|--------------------------------------|----------|
 | A-1 | 2026-11-15 | GitHub Copilot (Auto) | Add the user data type       | "Create a User data type with the specified fields; update AI_LOG.md and TODO.md." | Gradle lint, unit tests, debug build | Kept     |
 | A-2 | 2026-11-15 | GitHub Copilot (Auto) | Enable java.time API desugaring | "Update library dependencies to support Android API 26 such that LocalDateTime can be used. Do not make any other changes. Update AI_LOG.md accordingly." | Gradle lint, unit tests, debug build | Kept     |
+| A-3 | 2026-11-15 | GitHub Copilot (Auto) | Create dummy data for every model | "Read AGENTS.md, TODO.md, and app/src/main/kotlin/types/models.kt. Create sensible dummy data for every data class. Use DKK for currency. Update AI_LOG.md and TODO.md." | Gradle lint, unit tests, debug build | Kept |
 
 ## Failure log
 
