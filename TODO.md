@@ -19,3 +19,12 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Implement password hashing
 - [x] Update dummy data for users to include hashed password values
 - [x] Commit `add hashed password field to user data type and implement password hashing`
+
+## Session 2: Debt calculation
+
+- [x] Implement debt calculation for how much a person owes in a group
+- [x] Implement debt calculation for how much a person is owed in a group
+- [x] Implement debt calculation for how much a person owes to another person
+- [x] Implement debt calculation for how much a person owes in total
+- [x] Implement debt calculation for how much a person is owed in total
+- [x] Commit `add debt calculation for how much a person owes and is owed in a group, in total, and to and by another person`
