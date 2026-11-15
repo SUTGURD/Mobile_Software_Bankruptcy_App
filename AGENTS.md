@@ -45,8 +45,8 @@ Respect existing architecture and follow conventions. Documentation: `https://de
 
 - **Data model**: Kotlin data classes represent the application's entities and live in `app/src/main/kotlin/types/models.kt`. Any schema change starts there, not in a screen file.
 - **Dummy data**: Lives in `app/src/main/kotlin/data/` until persistence is added. Treated as the temporary stand-in for a database. Do not allow UI code to assume it is real.
-- **Screens**: See `TODO.md` for the build order. Screen files live in `app/src/main/kotlin/com/example/application_0/` follow the S-IDs from the design document navigation model.
-- **Screens**: Keep unit tests in `app/src/test/` and Android environment tests in `app/src/androidTest/`. Add tests for business logic and UI navigation.
+- **Screens**: See `TODO.md` for the build order. Screen files live in `app/src/main/kotlin/com/example/application_0/`. Follow the navigation model.
+- **Tests**: Keep unit tests in `app/src/test/` and Android environment tests in `app/src/androidTest/`. Add tests for business logic and UI navigation.
 - **Commits**: Lowercase, imperative, no full stop, terse. The diff explains itself. For example: `add login screen`, not `Implement account login functionality`.
 
 ## AI use disclosure (course requirement)
