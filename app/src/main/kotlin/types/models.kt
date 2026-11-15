@@ -10,7 +10,8 @@ data class User(
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val notificationsEnabled: Boolean,
-    val notificationSettings: NotificationSettings
+    val notificationSettings: NotificationSettings,
+    val passwordHash: String
 )
 
 data class NotificationSettings(

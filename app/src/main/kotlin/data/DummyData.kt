@@ -11,6 +11,7 @@ import types.NotificationType
 import types.Payment
 import types.Reminder
 import types.User
+import utils.hashPassword
 import java.time.LocalDateTime
 
 object DummyData {
@@ -28,7 +29,8 @@ object DummyData {
                 payments = true,
                 reminders = true,
                 groupActivity = true
-            )
+            ),
+            passwordHash = hashPassword("1231")
         ),
         User(
             id = "user-jonas",
@@ -43,7 +45,8 @@ object DummyData {
                 payments = true,
                 reminders = false,
                 groupActivity = true
-            )
+            ),
+            passwordHash = hashPassword("1232")
         ),
         User(
             id = "user-freja",
@@ -58,7 +61,8 @@ object DummyData {
                 payments = false,
                 reminders = true,
                 groupActivity = false
-            )
+            ),
+            passwordHash = hashPassword("1233")
         ),
         User(
             id = "user-mikkel",
@@ -73,7 +77,8 @@ object DummyData {
                 payments = true,
                 reminders = true,
                 groupActivity = true
-            )
+            ),
+            passwordHash = hashPassword("1234")
         )
     )
 

@@ -15,3 +15,7 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Commit `add types for users, groups, expenses, split expenses, payments, reminders, and notifications`
 - [x] Create dummy data
 - [x] Commit `add dummy data for users, groups, expenses, split expenses, payments, reminders, and notifications`
+- [x] Add hashed password field to user data type
+- [x] Implement password hashing
+- [x] Update dummy data for users to include hashed password values
+- [x] Commit `add hashed password field to user data type and implement password hashing`
