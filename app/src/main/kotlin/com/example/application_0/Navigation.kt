@@ -2,6 +2,7 @@ package com.example.application_0
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,18 +45,22 @@ fun AppNavigation() {
     }
 
     val navigate: (AppRoute) -> Unit = { destination ->
-        backEnabled = false
-        navController.navigate(destination.route) {
-            launchSingleTop = true
+        if (destination != AppRoute.Home || Authentication.currentUser.value != null) {
+            backEnabled = false
+            navController.navigate(destination.route) {
+                launchSingleTop = true
+            }
         }
     }
     val navigateToHome: () -> Unit = {
-        backEnabled = false
-        navController.navigate(AppRoute.Home.route) {
-            popUpTo(AppRoute.Entry.route) {
-                inclusive = true
+        if (Authentication.currentUser.value != null) {
+            backEnabled = false
+            navController.navigate(AppRoute.Home.route) {
+                popUpTo(AppRoute.Entry.route) {
+                    inclusive = true
+                }
+                launchSingleTop = true
             }
-            launchSingleTop = true
         }
     }
     val goBack: () -> Unit = {
@@ -74,20 +79,35 @@ fun AppNavigation() {
         }
         composable(AppRoute.Login.route) {
             LoginScreen(
-                onNavigate = { navigateToHome() },
+                onNavigate = navigate,
+                onLogin = Authentication::authenticate,
+                onAuthenticated = navigateToHome,
                 onBack = goBack,
                 backEnabled = backEnabled
             )
         }
         composable(AppRoute.CreateAccount.route) {
             CreateAccountScreen(
-                onNavigate = { navigateToHome() },
+                onNavigate = navigate,
                 onBack = goBack,
                 backEnabled = backEnabled
             )
         }
         composable(AppRoute.Home.route) {
-            HomeScreen(onNavigate = navigate)
+            val authenticatedUser by Authentication.currentUser.collectAsState()
+            LaunchedEffect(authenticatedUser) {
+                if (authenticatedUser == null) {
+                    navController.navigate(AppRoute.Entry.route) {
+                        popUpTo(AppRoute.Home.route) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            }
+            if (authenticatedUser != null) {
+                HomeScreen(onNavigate = navigate)
+            }
         }
         composable(AppRoute.Groups.route) {
             GroupsScreen(onNavigate = navigate, onBack = goBack, backEnabled = backEnabled)

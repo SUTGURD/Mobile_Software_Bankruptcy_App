@@ -11,7 +11,7 @@ import types.NotificationType
 import types.Payment
 import types.Reminder
 import types.User
-import utils.hashPassword
+import domain.hashPassword
 import java.time.LocalDateTime
 
 object DummyData {

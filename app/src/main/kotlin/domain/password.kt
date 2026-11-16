@@ -1,4 +1,4 @@
-package utils
+package domain
 
 import java.security.MessageDigest
 import java.nio.charset.StandardCharsets

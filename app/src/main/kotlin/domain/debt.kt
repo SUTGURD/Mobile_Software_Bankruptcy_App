@@ -1,4 +1,4 @@
-package utils
+package domain
 
 import types.Expense
 import types.ExpenseSplit

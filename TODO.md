@@ -34,3 +34,24 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Create mockup screens based on the navigation model and low-fi wireframe
 - [x] Route the screens according to the navigation model
 - [x] Commit `add mockup screens and navigation`
+
+## Session 4: Integrate dummy data and debt calculation
+
+- [x] Implement login functionality and user authentication using dummy data
+- [x] Commit `add login authentication using dummy data`
+- [ ] Create ViewModels for:
+  - [ ] UserProfileViewModel
+  - [ ] GroupsViewModel
+  - [ ] ExpensesViewModel
+  - [ ] NotificationViewModel
+  - [ ] DebtSummaryViewModel
+- [ ] Commit `add ViewModels for user profiles, groups, expenses, notifications, and debt summaries`
+- [ ] Replace placeholder UI with ViewModels fetching dummy data
+- [ ] Commit `replace placeholder UI with ViewModels fetching dummy data`
+
+## Later
+
+- [ ] Create viewModels for the homescreen and group details screen when the UI prototype has been developed
+- [ ] Update all UI and add styling when the UI prototype has been developed
+- [ ] Switch from dummy data to persistent data storage
+- [ ] Add syncStatus field (pending, synced, or failed) and synchronisation queue with retry and backoff
