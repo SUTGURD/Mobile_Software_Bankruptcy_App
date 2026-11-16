@@ -28,3 +28,9 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Implement debt calculation for how much a person owes in total
 - [x] Implement debt calculation for how much a person is owed in total
 - [x] Commit `add debt calculation for how much a person owes and is owed in a group, in total, and to and by another person`
+
+## Session 3: Screen structure and navigation
+
+- [x] Create mockup screens based on the navigation model and low-fi wireframe
+- [x] Route the screens according to the navigation model
+- [x] Commit `add mockup screens and navigation`
