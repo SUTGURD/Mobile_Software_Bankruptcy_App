@@ -13,6 +13,7 @@ data class ExpenseSummary(
     val amount: Double,
     val createdAt: LocalDateTime,
     val paidBy: String,
+    val paidByName: String,
     val receiptUri: String?
 )
 
@@ -92,6 +93,8 @@ class ExpensesViewModel(groupId: String? = null) : AuthenticatedViewModel() {
                     amount = expense.amount,
                     createdAt = expense.createdAt,
                     paidBy = expense.paidBy,
+                    paidByName = DummyData.users.firstOrNull { it.id == expense.paidBy }?.name
+                        ?: expense.paidBy,
                     receiptUri = expense.receiptUri
                 )
             }

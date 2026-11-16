@@ -14,18 +14,12 @@ fun CreateAccountScreen(
 ) {
     MockupScreenLayout(
         title = "Create account",
-        subtitle = "Set up your details to get started.",
+        subtitle = "Account creation is not available with dummy data.",
         onBack = onBack,
         backEnabled = backEnabled
     ) {
-        MockupField("Name", "Your full name")
-        Spacer(modifier = Modifier.height(14.dp))
-        MockupField("Email", "name@example.com")
-        Spacer(modifier = Modifier.height(14.dp))
-        MockupField("Phone number", "Optional")
-        Spacer(modifier = Modifier.height(14.dp))
-        MockupField("Password", "Create a password")
+        ScreenMessage("Log in with one of the existing dummy accounts to continue.")
         Spacer(modifier = Modifier.height(22.dp))
-        MockupAction("Create account", onClick = { onNavigate(AppRoute.Home) })
+        MockupAction("Log in", onClick = { onNavigate(AppRoute.Login) })
     }
 }

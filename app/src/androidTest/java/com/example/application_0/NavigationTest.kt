@@ -35,19 +35,19 @@ class NavigationTest {
         composeRule.onNodeWithTag("login_email").performTextInput("emma.nielsen@example.com")
         composeRule.onNodeWithTag("login_password").performTextInput("1231")
         composeRule.onAllNodesWithText("Log in").get(1).performClick()
-        composeRule.onNodeWithText("Good morning, Alex").assertIsDisplayed()
+        composeRule.onNodeWithText("Good morning, Emma Nielsen").assertIsDisplayed()
         assertEquals(AuthenticatedUser("user-emma"), Authentication.currentUser.value)
 
         composeRule.onNodeWithText("Groups").performClick()
         composeRule.onNodeWithText("Create group").performClick()
-        composeRule.onAllNodesWithText("Create group").get(1).performClick()
-        composeRule.onNodeWithText("Copenhagen Weekend").assertIsDisplayed()
+        composeRule.onNodeWithText("Aarhus weekend").performClick()
+        composeRule.onNodeWithText("Aarhus weekend").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Members").performClick()
+        composeRule.onAllNodesWithText("Members").get(1).performClick()
         composeRule.onNodeWithText("Manage members").performClick()
         composeRule.onNodeWithText("Back").performClick()
         composeRule.onNodeWithText("Back").performClick()
-        composeRule.onNodeWithText("Expenses").performClick()
+        composeRule.onAllNodesWithText("Expenses").get(1).performClick()
         composeRule.onNodeWithText("Add expense").performClick()
         composeRule.onNodeWithText("Back").performClick()
         composeRule.onNodeWithText("Back").performClick()
@@ -65,8 +65,7 @@ class NavigationTest {
         }
 
         composeRule.onNodeWithText("Create account").performClick()
-        composeRule.onAllNodesWithText("Create account").get(1).performClick()
-        composeRule.onNodeWithText("Set up your details to get started.").assertIsDisplayed()
+        composeRule.onNodeWithText("Account creation is not available with dummy data.").assertIsDisplayed()
     }
 
     @Test
@@ -100,12 +99,42 @@ class NavigationTest {
         composeRule.onNodeWithTag("login_email").performTextInput("emma.nielsen@example.com")
         composeRule.onNodeWithTag("login_password").performTextInput("1231")
         composeRule.onAllNodesWithText("Log in").get(1).performClick()
-        composeRule.onNodeWithText("Good morning, Alex").assertIsDisplayed()
+        composeRule.onNodeWithText("Good morning, Emma Nielsen").assertIsDisplayed()
 
         Authentication.logout()
 
         composeRule.onNodeWithText("Shared expenses, made simple").assertIsDisplayed()
         assertEquals(null, Authentication.currentUser.value)
+    }
+
+    @Test
+    fun profileAndNotificationsShowDataForTheAuthenticatedUser() {
+        Authentication.logout()
+        composeRule.setContent {
+            Application_0Theme {
+                AppNavigation()
+            }
+        }
+
+        composeRule.onNodeWithText("Log in").performClick()
+        composeRule.onNodeWithTag("login_email").performTextInput("emma.nielsen@example.com")
+        composeRule.onNodeWithTag("login_password").performTextInput("1231")
+        composeRule.onAllNodesWithText("Log in").get(1).performClick()
+
+        composeRule.onNodeWithText("DKK 0.00").assertIsDisplayed()
+        composeRule.onNodeWithText("DKK 300.00").assertIsDisplayed()
+        composeRule.onNodeWithText("Profile").performClick()
+        composeRule.onNodeWithText("Emma Nielsen").assertIsDisplayed()
+        composeRule.onNodeWithText("emma.nielsen@example.com").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Home").performClick()
+        composeRule.onNodeWithText("View notifications").performClick()
+        composeRule.onNodeWithText("Jonas paid his dinner share.").assertIsDisplayed()
+        assertEquals(
+            0,
+            composeRule.onAllNodesWithText("Emma added a DKK 900.00 dinner expense.")
+                .fetchSemanticsNodes().size
+        )
     }
 
     @Test
@@ -121,13 +150,13 @@ class NavigationTest {
         composeRule.onNodeWithTag("login_email").performTextInput("emma.nielsen@example.com")
         composeRule.onNodeWithTag("login_password").performTextInput("1231")
         composeRule.onAllNodesWithText("Log in").get(1).performClick()
-        composeRule.onNodeWithText("Good morning, Alex").assertIsDisplayed()
+        composeRule.onNodeWithText("Good morning, Emma Nielsen").assertIsDisplayed()
         composeRule.onNodeWithText("Groups").performClick()
 
         composeRule.onNodeWithText("Back").performTouchInput {
             doubleClick()
         }
 
-        composeRule.onNodeWithText("Good morning, Alex").assertIsDisplayed()
+        composeRule.onNodeWithText("Good morning, Emma Nielsen").assertIsDisplayed()
     }
 }

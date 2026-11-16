@@ -36,6 +36,7 @@ data class DebtResult(
 
 data class DebtSummaryUiState(
     val debtResult: DebtResult? = null,
+    val debtResults: List<DebtResult> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -43,25 +44,32 @@ data class DebtSummaryUiState(
 class DebtSummaryViewModel : AuthenticatedViewModel() {
     private val _uiState = MutableStateFlow(DebtSummaryUiState())
     val uiState = _uiState.asStateFlow()
+    private var observedUserId = Authentication.currentUser.value?.userId
 
     init {
         observeAuthenticatedUser { user ->
-            _uiState.value = DebtSummaryUiState(
-                error = if (user == null) "No authenticated user." else null
-            )
+            val userId = user?.userId
+            if (userId != observedUserId) {
+                observedUserId = userId
+                _uiState.value = DebtSummaryUiState(
+                    error = if (user == null) "No authenticated user." else null
+                )
+            } else if (user == null) {
+                _uiState.update { it.copy(error = "No authenticated user.") }
+            }
         }
     }
 
     fun calculateDebt(request: DebtRequest) {
+        calculateDebts(listOf(request))
+    }
+
+    fun calculateDebts(requests: List<DebtRequest>) {
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         val user = Authentication.currentUser.value
         if (user == null) {
             setError("No authenticated user.")
-            return
-        }
-        if (request.userId != user.userId) {
-            setError("The request user must be the authenticated user.")
             return
         }
 
@@ -70,6 +78,29 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
             .map { it.groupId }
             .toSet()
         val groups = DummyData.groups.filter { it.id in userGroupIds }
+        val results = mutableListOf<DebtResult>()
+
+        for (request in requests) {
+            val result = calculateResult(request, user, groups)
+            if (result == null) return
+            results += result
+        }
+
+        _uiState.value = DebtSummaryUiState(
+            debtResult = results.lastOrNull(),
+            debtResults = results
+        )
+    }
+
+    private fun calculateResult(
+        request: DebtRequest,
+        user: AuthenticatedUser,
+        groups: List<types.Group>
+    ): DebtResult? {
+        if (request.userId != user.userId) {
+            setError("The request user must be the authenticated user.")
+            return null
+        }
 
         if (request.debtType == DebtType.GROUP_OWED ||
             request.debtType == DebtType.GROUP_OWING
@@ -77,11 +108,11 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
             val groupId = request.groupId
             if (groupId == null) {
                 setError("A group is required for this debt type.")
-                return
+                return null
             }
             if (groups.none { it.id == groupId }) {
                 setError("You are not a member of this group.")
-                return
+                return null
             }
         }
 
@@ -91,13 +122,13 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
             val otherUserId = request.otherUserId
             if (otherUserId == null) {
                 setError("Another user is required for this debt type.")
-                return
+                return null
             }
             if (otherUserId == user.userId ||
                 DummyData.users.none { it.id == otherUserId }
             ) {
                 setError("The other user is not valid.")
-                return
+                return null
             }
         }
 
@@ -107,10 +138,9 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
         val currencies = groups.map { it.currency }.distinct()
         if (needsCurrency && currencies.size > 1) {
             setError("Debt cannot be combined across different currencies.")
-            return
+            return null
         }
         val currency = currencies.singleOrNull()
-
         val amount = when (request.debtType) {
             DebtType.TOTAL_OWED -> currency?.let {
                 totalAmountPersonOwes(
@@ -170,14 +200,12 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
             } ?: 0.0
         }
 
-        _uiState.value = DebtSummaryUiState(
-            debtResult = DebtResult(
-                debtType = request.debtType,
-                userId = request.userId,
-                groupId = request.groupId,
-                otherUserId = request.otherUserId,
-                result = amount
-            )
+        return DebtResult(
+            debtType = request.debtType,
+            userId = request.userId,
+            groupId = request.groupId,
+            otherUserId = request.otherUserId,
+            result = amount
         )
     }
 

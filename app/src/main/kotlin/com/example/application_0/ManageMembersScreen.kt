@@ -1,34 +1,51 @@
 package com.example.application_0
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun ManageMembersScreen(onBack: () -> Unit, backEnabled: Boolean) {
+    val viewModel: GroupsViewModel = viewModel()
+    val state by viewModel.uiState.collectAsState()
+    val activeGroupId by ActiveGroup.groupId.collectAsState()
+    val group = state.groups.firstOrNull { it.id == activeGroupId } ?: state.groups.firstOrNull()
+    val userId = Authentication.currentUser.collectAsState().value?.userId
+
     MockupScreenLayout(
         title = "Manage members",
-        subtitle = "Copenhagen Weekend · 4 members",
+        subtitle = group?.let { "${it.name} · ${it.memberCount} members" } ?: "Group membership",
         onBack = onBack,
         backEnabled = backEnabled
     ) {
-        MockupSectionTitle("Add a member")
-        Spacer(modifier = Modifier.height(12.dp))
-        MockupField("Email address", "name@example.com")
-        Spacer(modifier = Modifier.height(12.dp))
-        MockupAction("Add member")
-        Spacer(modifier = Modifier.height(24.dp))
-        MockupSectionTitle("Current members")
-        Spacer(modifier = Modifier.height(12.dp))
-        MockupCard {
-            Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(18.dp)) {
-                MockupInfoRow("Alex Morgan", "You · Group admin", "ADMIN")
-                MockupInfoRow("Mia Jensen", "Member", "REMOVE")
-                MockupInfoRow("Noah Larsen", "Member", "REMOVE")
-                MockupInfoRow("Sofie Holm", "Member", "REMOVE")
+        ScreenDataStatus(state.isLoading, state.error)
+        when {
+            group == null && !state.isLoading && state.error == null ->
+                ScreenMessage("You are not a member of any groups.")
+            group != null -> {
+                MockupSectionTitle("Current members")
+                MockupCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                        group.members.forEach { member ->
+                            MockupInfoRow(
+                                title = member.name,
+                                detail = member.email,
+                                trailing = if (member.userId == userId) {
+                                    "You · ${member.memberStatus}"
+                                } else {
+                                    member.memberStatus.name
+                                }
+                            )
+                        }
+                    }
+                }
+                ScreenMessage(
+                    "Member changes are not available while using dummy data."
+                )
             }
         }
     }

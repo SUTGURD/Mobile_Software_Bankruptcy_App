@@ -86,12 +86,6 @@ internal fun MockupScreenLayout(
                 color = Ink
             )
             Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "MOCKUP",
-                style = MaterialTheme.typography.labelSmall,
-                color = MutedInk,
-                fontWeight = FontWeight.SemiBold
-            )
         }
 
         Column(

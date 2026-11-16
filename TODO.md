@@ -46,8 +46,8 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
   - [x] NotificationsViewModel
   - [x] DebtSummaryViewModel
 - [x] Commit `add ViewModels for user profiles, groups, expenses, notifications, and debt summaries`
-- [ ] Replace placeholder UI with ViewModels fetching dummy data
-- [ ] Commit `replace placeholder UI with ViewModels fetching dummy data`
+- [x] Replace placeholder UI with ViewModels fetching dummy data
+- [x] Commit `replace placeholder UI with ViewModels fetching dummy data`
 
 ## Later
 

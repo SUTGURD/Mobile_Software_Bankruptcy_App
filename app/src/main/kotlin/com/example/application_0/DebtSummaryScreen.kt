@@ -3,13 +3,13 @@ package com.example.application_0
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun DebtSummaryScreen(
@@ -17,36 +17,74 @@ fun DebtSummaryScreen(
     onBack: () -> Unit,
     backEnabled: Boolean
 ) {
+    val groupsViewModel: GroupsViewModel = viewModel()
+    val debtViewModel: DebtSummaryViewModel = viewModel()
+    val groupsState by groupsViewModel.uiState.collectAsState()
+    val debtState by debtViewModel.uiState.collectAsState()
+    val activeGroupId by ActiveGroup.groupId.collectAsState()
+    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
+        ?: groupsState.groups.firstOrNull()
+    val userId = Authentication.currentUser.collectAsState().value?.userId
+
+    LaunchedEffect(group?.id, userId) {
+        if (group != null && userId != null) {
+            ActiveGroup.select(group.id)
+            debtViewModel.calculateDebts(
+                listOf(
+                    DebtRequest(DebtType.GROUP_OWED, userId, group.id),
+                    DebtRequest(DebtType.GROUP_OWING, userId, group.id)
+                )
+            )
+        }
+    }
+
     MockupScreenLayout(
         title = "Debt summary",
-        subtitle = "Copenhagen Weekend · Group balances",
+        subtitle = group?.let { "${it.name} · Group balances" } ?: "Balances for your groups.",
         showBottomBar = true,
         bottomBarDestination = AppRoute.Groups,
         onNavigate = onNavigate,
         onBack = onBack,
         backEnabled = backEnabled
     ) {
-        MockupCard {
-            Column {
-                Text("Total group expenses", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF69758B))
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "DKK 1,240",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color(0xFF17233C),
-                    fontWeight = FontWeight.Bold
-                )
+        ScreenDataStatus(groupsState.isLoading || debtState.isLoading, groupsState.error ?: debtState.error)
+        if (group != null) {
+            MockupCard {
+                Column {
+                    MockupInfoRow("Total group expenses", formatAmount(group.totalExpenseAmount, group.currency))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    MockupInfoRow("Number of expenses", group.expenseCount.toString())
+                    Spacer(modifier = Modifier.height(12.dp))
+                    val owed = debtState.debtResults.firstOrNull { it.debtType == DebtType.GROUP_OWED }
+                    val owing = debtState.debtResults.firstOrNull { it.debtType == DebtType.GROUP_OWING }
+                    MockupInfoRow(
+                        "You owe",
+                        owed?.let { formatAmount(it.result, group.currency) } ?: "Loading"
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    MockupInfoRow(
+                        "Owed to you",
+                        owing?.let { formatAmount(it.result, group.currency) } ?: "Loading"
+                    )
+                }
             }
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-        MockupSectionTitle("Who owes whom")
-        Spacer(modifier = Modifier.height(12.dp))
-        MockupCard {
-            Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(18.dp)) {
-                MockupInfoRow("Mia Jensen", "Owes Alex Morgan", "DKK 145")
-                MockupInfoRow("Noah Larsen", "Owes Mia Jensen", "DKK 275")
-                MockupInfoRow("Sofie Holm", "Owes Alex Morgan", "DKK 90")
+            Spacer(modifier = Modifier.height(20.dp))
+            MockupSectionTitle("Group members")
+            Spacer(modifier = Modifier.height(12.dp))
+            MockupCard {
+                Column {
+                    group.members.forEachIndexed { index, member ->
+                        if (index > 0) Spacer(modifier = Modifier.height(16.dp))
+                        MockupInfoRow(
+                            member.name,
+                            member.email,
+                            member.memberStatus.name
+                        )
+                    }
+                }
             }
+        } else if (!groupsState.isLoading && groupsState.error == null) {
+            ScreenMessage("You are not a member of any groups.")
         }
     }
 }
