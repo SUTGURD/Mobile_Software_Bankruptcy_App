@@ -39,13 +39,13 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 
 - [x] Implement login functionality and user authentication using dummy data
 - [x] Commit `add login authentication using dummy data`
-- [ ] Create ViewModels for:
-  - [ ] UserProfileViewModel
-  - [ ] GroupsViewModel
-  - [ ] ExpensesViewModel
-  - [ ] NotificationViewModel
-  - [ ] DebtSummaryViewModel
-- [ ] Commit `add ViewModels for user profiles, groups, expenses, notifications, and debt summaries`
+- [x] Create ViewModels for:
+  - [x] UserProfileViewModel
+  - [x] GroupsViewModel
+  - [x] ExpensesViewModel
+  - [x] NotificationsViewModel
+  - [x] DebtSummaryViewModel
+- [x] Commit `add ViewModels for user profiles, groups, expenses, notifications, and debt summaries`
 - [ ] Replace placeholder UI with ViewModels fetching dummy data
 - [ ] Commit `replace placeholder UI with ViewModels fetching dummy data`
 
