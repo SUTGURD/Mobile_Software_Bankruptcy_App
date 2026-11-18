@@ -11,6 +11,7 @@ data class GroupSummary(
     val id: String,
     val name: String,
     val description: String?,
+    val type: String?,
     val currency: String,
     val memberCount: Int,
     val expenseCount: Int,
@@ -23,6 +24,7 @@ data class GroupMemberSummary(
     val userId: String,
     val name: String,
     val email: String,
+    val profileImageUri: String?,
     val memberStatus: MemberRole,
     val joinedAt: LocalDateTime
 )
@@ -69,6 +71,7 @@ class GroupsViewModel : AuthenticatedViewModel() {
                                 userId = member.id,
                                 name = member.name,
                                 email = member.email,
+                                profileImageUri = member.profileImageUri,
                                 memberStatus = groupMember.role,
                                 joinedAt = groupMember.joinedAt
                             )
@@ -78,6 +81,7 @@ class GroupsViewModel : AuthenticatedViewModel() {
                     id = group.id,
                     name = group.name,
                     description = group.description,
+                    type = group.type,
                     currency = group.currency,
                     memberCount = DummyData.groupMembers.count { it.groupId == group.id },
                     expenseCount = DummyData.expenses.count { it.groupId == group.id },

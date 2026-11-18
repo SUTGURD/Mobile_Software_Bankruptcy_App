@@ -49,9 +49,25 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Replace placeholder UI with ViewModels fetching dummy data
 - [x] Commit `replace placeholder UI with ViewModels fetching dummy data`
 
+## Session 5: UI overhaul
+
+- [x] Update data types and ViewModels to match UI requirements
+- [x] Update existing screens and components to match the UI from our hi-fi prototype
+- [x] Update routing to match the new UI
+- [x] Commit `replace AI generated UI with the team's own design`
+- [ ] Add the missing screens from the navigation model and hi-fi prototype:
+    - [ ] AddMember
+    - [ ] RemoveMember
+    - [ ] SplitExpense
+    - [ ] UploadReceipt
+    - [ ] ViewReceipt
+    - [ ] ExpenseSaved
+- [ ] Route the new screens
+- [ ] Commit `add AddExpense, AddMember, RemoveMember, SplitExpense, UploadReceipt, ViewReceipt, and ExpenseSaved screens and route them`
+- [ ] Add settings screens
+- [ ] Commit `add profile and notification settings screens`
+
 ## Later
 
-- [ ] Create viewModels for the homescreen and group details screen when the UI prototype has been developed
-- [ ] Update all UI and add styling when the UI prototype has been developed
 - [ ] Switch from dummy data to persistent data storage
 - [ ] Add syncStatus field (pending, synced, or failed) and synchronisation queue with retry and backoff

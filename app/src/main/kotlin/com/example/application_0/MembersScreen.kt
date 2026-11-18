@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -19,39 +21,55 @@ fun MembersScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEnable
     val group = state.groups.firstOrNull { it.id == activeGroupId } ?: state.groups.firstOrNull()
     val userId = Authentication.currentUser.collectAsState().value?.userId
 
-    MockupScreenLayout(
+    ScreenLayout(
         title = "Members",
-        subtitle = group?.let { "${it.name} · ${it.memberCount} members" } ?: "Members in your groups.",
         showBottomBar = true,
         bottomBarDestination = AppRoute.Groups,
         onNavigate = onNavigate,
         onBack = onBack,
-        backEnabled = backEnabled
+        backEnabled = backEnabled,
+        bottomContent = {
+            if (group != null) {
+                ActionButton(
+                    "Invite a friend",
+                    leadingIcon = R.drawable.ic_add,
+                    onClick = { onNavigate(AppRoute.ManageMembers) }
+                )
+            }
+        }
     ) {
+        Spacer(modifier = Modifier.height(112.dp))
+        Text(
+            group?.let { "${it.name} · ${it.memberCount} active members" } ?: "Group members",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MutedGreen
+        )
+        Spacer(modifier = Modifier.height(18.dp))
         ScreenDataStatus(state.isLoading, state.error)
         when {
             group == null && !state.isLoading && state.error == null ->
                 ScreenMessage("You are not a member of any groups.")
             group != null -> {
-                MockupSectionTitle("Group members")
-                Spacer(modifier = Modifier.height(12.dp))
-                MockupCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                        group.members.forEach { member ->
-                            MockupInfoRow(
-                                title = member.name,
-                                detail = "${member.email} · Joined ${formatDate(member.joinedAt)}",
-                                trailing = if (member.userId == userId) {
-                                    "You · ${member.memberStatus}"
-                                } else {
-                                    member.memberStatus.name
-                                }
-                            )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    group.members.forEach { member ->
+                        Card {
+                            Column {
+                                Text(
+                                    member.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = ForestGreen
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    if (member.userId == userId) "You · Group ${member.memberStatus.name.lowercase()}"
+                                    else member.memberStatus.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MutedGreen
+                                )
+                            }
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(20.dp))
-                MockupAction("Manage members", onClick = { onNavigate(AppRoute.ManageMembers) })
             }
         }
     }

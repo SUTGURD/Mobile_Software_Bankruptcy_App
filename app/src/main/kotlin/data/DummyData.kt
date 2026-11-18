@@ -91,7 +91,8 @@ object DummyData {
             createdAt = LocalDateTime.of(2026, 10, 20, 17, 30),
             allowAllMembersToAdd = true,
             allowAllMembersToRemove = false,
-            currency = "DKK"
+            currency = "DKK",
+            type = "Trip"
         ),
         Group(
             id = "group-flat",
@@ -101,7 +102,8 @@ object DummyData {
             createdAt = LocalDateTime.of(2026, 9, 5, 18, 0),
             allowAllMembersToAdd = true,
             allowAllMembersToRemove = true,
-            currency = "DKK"
+            currency = "DKK",
+            type = "Home"
         )
     )
 
@@ -133,6 +135,16 @@ object DummyData {
             paidBy = "user-jonas",
             receiptUri = null,
             authorId = "user-jonas"
+        ),
+        Expense(
+            id = "expense-taxi",
+            groupId = "group-weekend",
+            amount = 300.0,
+            description = "Shared taxi",
+            createdAt = LocalDateTime.of(2026, 11, 8, 22, 15),
+            paidBy = "user-freja",
+            receiptUri = null,
+            authorId = "user-freja"
         )
     )
 
@@ -140,6 +152,8 @@ object DummyData {
         ExpenseSplit("split-dinner-emma", "expense-dinner", "user-emma", 300.0),
         ExpenseSplit("split-dinner-jonas", "expense-dinner", "user-jonas", 300.0),
         ExpenseSplit("split-dinner-freja", "expense-dinner", "user-freja", 300.0),
+        ExpenseSplit("split-taxi-freja", "expense-taxi", "user-freja", 150.0),
+        ExpenseSplit("split-taxi-jonas", "expense-taxi", "user-jonas", 150.0),
         ExpenseSplit("split-groceries-jonas", "expense-groceries", "user-jonas", 120.0),
         ExpenseSplit("split-groceries-mikkel", "expense-groceries", "user-mikkel", 120.0)
     )

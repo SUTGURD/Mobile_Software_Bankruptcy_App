@@ -7,6 +7,7 @@ data class User(
     val name: String,
     val email: String,
     val phoneNumber: String?,
+    val profileImageUri: String? = null,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val notificationsEnabled: Boolean,
@@ -29,7 +30,8 @@ data class  Group(
     val createdAt: LocalDateTime,
     val allowAllMembersToAdd: Boolean,
     val allowAllMembersToRemove: Boolean,
-    val currency: String
+    val currency: String,
+    val type: String? = null
 )
 
 data class GroupMember(

@@ -1,15 +1,24 @@
 package com.example.application_0
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.util.Locale
 
 @Composable
 fun DebtSummaryScreen(
@@ -33,55 +42,102 @@ fun DebtSummaryScreen(
                 listOf(
                     DebtRequest(DebtType.GROUP_OWED, userId, group.id),
                     DebtRequest(DebtType.GROUP_OWING, userId, group.id)
-                )
+                ) + group.members
+                    .filter { it.userId != userId }
+                    .flatMap { member ->
+                        listOf(
+                            DebtRequest(DebtType.OWED_BY_USER, userId, group.id, member.userId),
+                            DebtRequest(DebtType.OWING_TO_USER, userId, group.id, member.userId)
+                        )
+                    }
             )
         }
     }
 
-    MockupScreenLayout(
+    ScreenLayout(
         title = "Debt summary",
-        subtitle = group?.let { "${it.name} · Group balances" } ?: "Balances for your groups.",
         showBottomBar = true,
         bottomBarDestination = AppRoute.Groups,
         onNavigate = onNavigate,
         onBack = onBack,
-        backEnabled = backEnabled
+        backEnabled = backEnabled,
+        bottomContent = {
+            ActionButton("Back to group", secondary = true, onClick = onBack)
+        }
     ) {
         ScreenDataStatus(groupsState.isLoading || debtState.isLoading, groupsState.error ?: debtState.error)
         if (group != null) {
-            MockupCard {
-                Column {
-                    MockupInfoRow("Total group expenses", formatAmount(group.totalExpenseAmount, group.currency))
-                    Spacer(modifier = Modifier.height(12.dp))
-                    MockupInfoRow("Number of expenses", group.expenseCount.toString())
-                    Spacer(modifier = Modifier.height(12.dp))
-                    val owed = debtState.debtResults.firstOrNull { it.debtType == DebtType.GROUP_OWED }
-                    val owing = debtState.debtResults.firstOrNull { it.debtType == DebtType.GROUP_OWING }
-                    MockupInfoRow(
-                        "You owe",
-                        owed?.let { formatAmount(it.result, group.currency) } ?: "Loading"
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    MockupInfoRow(
-                        "Owed to you",
-                        owing?.let { formatAmount(it.result, group.currency) } ?: "Loading"
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            MockupSectionTitle("Group members")
+            Spacer(modifier = Modifier.height(112.dp))
+            val amountOwed = debtState.debtResults.firstOrNull {
+                it.debtType == DebtType.GROUP_OWING
+            }?.result ?: 0.0
+            val amountToPay = debtState.debtResults.firstOrNull {
+                it.debtType == DebtType.GROUP_OWED
+            }?.result ?: 0.0
+            val netBalance = amountOwed - amountToPay
+            val owing = netBalance < 0.0
+            BalanceCard(
+                label = if (owing) "You owe · ${group.currency}" else "You are owed · ${group.currency}",
+                amount = (if (netBalance > 0.0) "+" else if (owing) "-" else "") +
+                    String.format(Locale.UK, "%,.0f", kotlin.math.abs(netBalance)),
+                detail = "",
+                action = "",
+                currency = "",
+                owing = owing,
+                onClick = {}
+            )
+            Spacer(modifier = Modifier.height(28.dp))
+            Text(
+                text = if (owing) "PAYMENTS YOU OWE" else "PAYMENTS TO YOU",
+                style = MaterialTheme.typography.labelSmall,
+                color = MutedGreen
+            )
             Spacer(modifier = Modifier.height(12.dp))
-            MockupCard {
-                Column {
-                    group.members.forEachIndexed { index, member ->
-                        if (index > 0) Spacer(modifier = Modifier.height(16.dp))
-                        MockupInfoRow(
-                            member.name,
-                            member.email,
-                            member.memberStatus.name
-                        )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                group.members
+                    .filter { it.userId != userId }
+                    .forEach { member ->
+                        val amount = debtState.debtResults.firstOrNull {
+                            it.debtType ==
+                                (if (owing) DebtType.OWING_TO_USER else DebtType.OWED_BY_USER) &&
+                                it.otherUserId == member.userId
+                        }?.result ?: 0.0
+                        Card(contentPadding = 14.dp) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = if (owing) "You → ${member.name.substringBefore(' ')}"
+                                        else "${member.name.substringBefore(' ')} → You",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium,
+                                        color = ForestGreen
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = group.name,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MutedGreen
+                                    )
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = String.format(Locale.UK, "%,.0f", amount),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = ForestGreen
+                                    )
+                                    Text(
+                                        text = group.currency,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MutedGreen
+                                    )
+                                }
+                            }
+                        }
                     }
-                }
             }
         } else if (!groupsState.isLoading && groupsState.error == null) {
             ScreenMessage("You are not a member of any groups.")

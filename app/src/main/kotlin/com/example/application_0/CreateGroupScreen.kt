@@ -16,9 +16,10 @@ fun CreateGroupScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEn
     val viewModel: GroupsViewModel = viewModel()
     val state by viewModel.uiState.collectAsState()
 
-    MockupScreenLayout(
+    ScreenLayout(
         title = "Create group",
         subtitle = "Your current groups.",
+        bottomBarDestination = AppRoute.Groups,
         onBack = onBack,
         backEnabled = backEnabled
     ) {
@@ -27,10 +28,10 @@ fun CreateGroupScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEn
             state.isLoading || state.error != null -> Unit
             state.groups.isEmpty() -> ScreenMessage("You are not a member of any groups.")
             else -> {
-                MockupCard {
+                Card {
                     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                         state.groups.forEach { group ->
-                            MockupInfoRow(
+                            InfoRow(
                                 group.name,
                                 "${group.memberCount} members · ${group.expenseCount} expenses",
                                 formatAmount(group.totalExpenseAmount, group.currency),

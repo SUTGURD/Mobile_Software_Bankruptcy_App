@@ -1,11 +1,10 @@
 package com.example.application_0
 
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -31,73 +31,63 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var loginFailed by remember { mutableStateOf(false) }
 
-    MockupScreenLayout(
-        title = "Log in",
-        subtitle = "Welcome back. Enter your details below.",
+    ScreenLayout(
+        showBottomBar = false,
         onBack = onBack,
-        backEnabled = backEnabled
+        backEnabled = backEnabled,
+        scrollContent = false
     ) {
-        OutlinedTextField(
-            value = email,
-            onValueChange = {
-                email = it
-                loginFailed = false
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("login_email"),
-            label = { Text("Email") },
-            placeholder = { Text("name@example.com") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(modifier = Modifier.weight(1.2f))
+            FormField(
+                label = "Email address",
+                value = email,
+                onValueChange = {
+                    email = it
+                    loginFailed = false
+                },
+                modifier = Modifier.testTag("login_email"),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                )
             )
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                loginFailed = false
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("login_password"),
-            label = { Text("Password") },
-            placeholder = { Text("Enter your password") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
+            Spacer(modifier = Modifier.height(16.dp))
+            FormField(
+                label = "Password",
+                value = password,
+                onValueChange = {
+                    password = it
+                    loginFailed = false
+                },
+                modifier = Modifier.testTag("login_password"),
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                )
             )
-        )
-        if (loginFailed) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Email or password is incorrect.",
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        MockupAction(
-            "Log in",
-            onClick = {
-                if (onLogin(email, password)) {
-                    onAuthenticated()
-                } else {
-                    loginFailed = true
-                }
+            if (loginFailed) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Email or password is incorrect.",
+                    color = MaterialTheme.colorScheme.error
+                )
             }
-        )
-        Spacer(modifier = Modifier.height(18.dp))
-        MockupAction(
-            "Create account",
-            secondary = true,
-            onClick = { onNavigate(AppRoute.CreateAccount) }
-        )
-        Spacer(modifier = Modifier.height(18.dp))
-        MockupCaption("Forgot password?")
+            Spacer(modifier = Modifier.height(72.dp))
+            ActionButton(
+                "Log in",
+                onClick = {
+                    if (onLogin(email, password)) onAuthenticated() else loginFailed = true
+                }
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            ActionButton(
+                "New here? Create an account",
+                secondary = true,
+                onClick = { onNavigate(AppRoute.CreateAccount) }
+            )
+            Spacer(modifier = Modifier.weight(0.8f))
+        }
     }
 }

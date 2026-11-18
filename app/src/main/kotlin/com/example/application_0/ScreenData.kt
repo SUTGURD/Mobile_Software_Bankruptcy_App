@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.UK)
+private val dateFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.UK)
 
 internal fun formatAmount(amount: Double, currency: String): String =
     "$currency ${String.format(Locale.UK, "%.2f", amount)}"

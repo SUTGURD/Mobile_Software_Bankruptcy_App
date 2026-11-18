@@ -5,15 +5,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import types.NotificationSettings
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 data class UserProfile(
     val id: String,
     val name: String,
     val email: String,
     val phoneNumber: String?,
+    val profileImageUri: String?,
+    val memberSince: String,
     val notificationsEnabled: Boolean,
     val notificationSettings: NotificationSettings
 )
+
+private val memberSinceFormatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.UK)
 
 data class UserProfileUiState(
     val profile: UserProfile? = null,
@@ -54,6 +60,8 @@ class UserProfileViewModel : AuthenticatedViewModel() {
                 name = profile.name,
                 email = profile.email,
                 phoneNumber = profile.phoneNumber,
+                profileImageUri = profile.profileImageUri,
+                memberSince = profile.createdAt.format(memberSinceFormatter),
                 notificationsEnabled = profile.notificationsEnabled,
                 notificationSettings = profile.notificationSettings
             ),
