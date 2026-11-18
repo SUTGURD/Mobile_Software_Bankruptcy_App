@@ -1,10 +1,14 @@
 package com.example.application_0
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,12 +16,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun ExpensesScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEnabled: Boolean) {
+fun ExpensesScreen(
+    onNavigate: (AppRoute) -> Unit,
+    onBack: () -> Unit,
+    backEnabled: Boolean,
+    expenseFlowViewModel: ExpenseFlowViewModel
+) {
     val expensesViewModel: ExpensesViewModel = viewModel()
     val groupsViewModel: GroupsViewModel = viewModel()
     val expensesState by expensesViewModel.uiState.collectAsState()
@@ -79,8 +90,17 @@ fun ExpensesScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEnabl
             expensesState.expenses.isEmpty() -> ScreenMessage("This group has no expenses.")
             else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 expensesState.expenses.forEach { expense ->
-                    Card {
-                        androidx.compose.foundation.layout.Row(
+                    Card(
+                        modifier = Modifier.clickable(
+                            enabled = expense.receiptUri != null,
+                            role = if (expense.receiptUri == null) null else Role.Button,
+                            onClick = {
+                                expenseFlowViewModel.selectExpense(expense)
+                                onNavigate(AppRoute.ViewReceipt)
+                            }
+                        )
+                    ) {
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -97,6 +117,23 @@ fun ExpensesScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEnabl
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MutedGreen
                                 )
+                                if (expense.receiptUri != null) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                        Text(
+                                            "Receipt attached",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = ForestGreen
+                                        )
+                                        Spacer(modifier = Modifier.size(4.dp))
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_chevron_right),
+                                            contentDescription = "View receipt",
+                                            modifier = Modifier.size(16.dp),
+                                            tint = ForestGreen
+                                        )
+                                    }
+                                }
                             }
                             Text(
                                 formatCompactAmount(expense.amount) + " ${group?.currency ?: "DKK"}",

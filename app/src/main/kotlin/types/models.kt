@@ -41,6 +41,15 @@ data class GroupMember(
     val joinedAt: LocalDateTime
 )
 
+data class GroupInvitation(
+    val id: String,
+    val groupId: String,
+    val inviteeName: String,
+    val inviteeEmail: String,
+    val invitedByUserId: String,
+    val createdAt: LocalDateTime
+)
+
 enum class MemberRole {
     ADMIN,
     MEMBER

@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
@@ -12,12 +14,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -30,7 +30,8 @@ import java.util.Locale
 fun AddExpenseScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
-    backEnabled: Boolean
+    backEnabled: Boolean,
+    expenseFlowViewModel: ExpenseFlowViewModel
 ) {
     val groupsViewModel: GroupsViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
@@ -39,8 +40,9 @@ fun AddExpenseScreen(
         ?: groupsState.groups.firstOrNull()
     val profileViewModel: UserProfileViewModel = viewModel()
     val profileState by profileViewModel.uiState.collectAsState()
-    var amount by remember { mutableStateOf("480.00") }
-    var description by remember { mutableStateOf("Dinner at ÆDEHUS") }
+    val draft by expenseFlowViewModel.uiState.collectAsState()
+    val amount = draft.amount
+    val description = draft.description
 
     ScreenLayout(
         title = "Add expense",
@@ -48,7 +50,13 @@ fun AddExpenseScreen(
         bottomBarDestination = AppRoute.Groups,
         onBack = onBack,
         backEnabled = backEnabled,
-        bottomContent = { ActionButton("Save expense", enabled = false) }
+        bottomContent = {
+            ActionButton(
+                "Save expense",
+                enabled = amount.toDoubleOrNull()?.let { it > 0.0 } == true,
+                onClick = { onNavigate(AppRoute.ExpenseSaved) }
+            )
+        }
     ) {
         ScreenDataStatus(groupsState.isLoading, groupsState.error)
         Text(
@@ -68,7 +76,7 @@ fun AddExpenseScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     BasicTextField(
                         value = amount,
-                        onValueChange = { amount = it.filter { char -> char.isDigit() || char == '.' } },
+                        onValueChange = expenseFlowViewModel::updateAmount,
                         singleLine = true,
                         textStyle = androidx.compose.material3.MaterialTheme.typography.headlineMedium.copy(
                             color = ForestGreen,
@@ -94,7 +102,7 @@ fun AddExpenseScreen(
         FormField(
             label = "Description",
             value = description,
-            onValueChange = { description = it },
+            onValueChange = expenseFlowViewModel::updateDescription,
             placeholder = "Dinner at ÆDEHUS"
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -109,7 +117,12 @@ fun AddExpenseScreen(
         val amountPerMember = amount.toDoubleOrNull()?.let { value ->
             if (memberCount > 0) formatCompactAmount(value / memberCount) else "0"
         } ?: "0"
-        Card {
+        Card(
+            modifier = Modifier.clickable(
+                role = Role.Button,
+                onClick = { onNavigate(AppRoute.SplitExpense) }
+            )
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Split equally", color = ForestGreen)
@@ -129,15 +142,34 @@ fun AddExpenseScreen(
             }
         }
         Spacer(modifier = Modifier.height(10.dp))
-        Card {
+        Card(
+            modifier = Modifier.clickable(
+                role = Role.Button,
+                onClick = { onNavigate(AppRoute.UploadReceipt) }
+            )
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Attach a receipt", modifier = Modifier.weight(1f), color = ForestGreen)
-                Icon(
-                    painter = painterResource(R.drawable.ic_add),
-                    contentDescription = "Add a receipt",
-                    modifier = Modifier.size(20.dp),
-                    tint = ForestGreen
-                )
+                if (draft.receiptAttached) {
+                    androidx.compose.material3.Surface(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                        color = PaleGreen
+                    ) {
+                        Text(
+                            text = "✓  Receipt attached",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            color = ForestGreen
+                        )
+                    }
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_add),
+                        contentDescription = "Add a receipt",
+                        modifier = Modifier.size(20.dp),
+                        tint = ForestGreen
+                    )
+                }
             }
         }
     }

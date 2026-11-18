@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
@@ -27,9 +28,14 @@ enum class AppRoute(val route: String, val label: String, val hasBackButton: Boo
     CreateGroup("create-group", "Create group", true),
     GroupDetails("group-details", "Group details", true),
     Members("members", "Members", true),
-    ManageMembers("manage-members", "Manage members", true),
+    AddMember("add-member", "Add member", true),
+    RemoveMember("remove-member", "Remove member", true),
     Expenses("expenses", "Expenses", true),
     AddExpense("add-expense", "Add expense", true),
+    SplitExpense("split-expense", "Split expense", true),
+    UploadReceipt("upload-receipt", "Upload receipt", true),
+    ViewReceipt("view-receipt", "View receipt", true),
+    ExpenseSaved("expense-saved", "Expense saved", true),
     DebtSummary("debt-summary", "Debt summary", true)
 }
 
@@ -39,6 +45,8 @@ private val publicRoutes = setOf(AppRoute.Entry, AppRoute.Login, AppRoute.Create
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val expenseFlowViewModel: ExpenseFlowViewModel = viewModel()
+    val memberManagementViewModel: MemberManagementViewModel = viewModel()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = AppRoute.entries.firstOrNull {
         it.route == currentBackStackEntry?.destination?.route
@@ -229,16 +237,75 @@ fun AppNavigation() {
             GroupDetailsScreen(onNavigate = ::navigate, onBack = ::goBack, backEnabled = backEnabled)
         }
         composable(AppRoute.Members.route) {
-            MembersScreen(onNavigate = ::navigate, onBack = ::goBack, backEnabled = backEnabled)
+            MembersScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                memberViewModel = memberManagementViewModel
+            )
         }
-        composable(AppRoute.ManageMembers.route) {
-            ManageMembersScreen(onNavigate = ::navigate, onBack = ::goBack, backEnabled = backEnabled)
+        composable(AppRoute.AddMember.route) {
+            AddMemberScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled
+            )
+        }
+        composable(AppRoute.RemoveMember.route) {
+            RemoveMemberScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                memberViewModel = memberManagementViewModel
+            )
         }
         composable(AppRoute.Expenses.route) {
-            ExpensesScreen(onNavigate = ::navigate, onBack = ::goBack, backEnabled = backEnabled)
+            ExpensesScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                expenseFlowViewModel = expenseFlowViewModel
+            )
         }
         composable(AppRoute.AddExpense.route) {
-            AddExpenseScreen(onNavigate = ::navigate, onBack = ::goBack, backEnabled = backEnabled)
+            AddExpenseScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                expenseFlowViewModel = expenseFlowViewModel
+            )
+        }
+        composable(AppRoute.SplitExpense.route) {
+            SplitExpenseScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                expenseFlowViewModel = expenseFlowViewModel
+            )
+        }
+        composable(AppRoute.UploadReceipt.route) {
+            UploadReceiptScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                expenseFlowViewModel = expenseFlowViewModel
+            )
+        }
+        composable(AppRoute.ViewReceipt.route) {
+            ViewReceiptScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                expenseFlowViewModel = expenseFlowViewModel
+            )
+        }
+        composable(AppRoute.ExpenseSaved.route) {
+            ExpenseSavedScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                expenseFlowViewModel = expenseFlowViewModel
+            )
         }
         composable(AppRoute.DebtSummary.route) {
             DebtSummaryScreen(onNavigate = ::navigate, onBack = ::goBack, backEnabled = backEnabled)
@@ -261,11 +328,17 @@ private fun canonicalPath(destination: AppRoute): List<AppRoute> = when (destina
     AppRoute.CreateGroup -> listOf(AppRoute.Groups, AppRoute.CreateGroup)
     AppRoute.GroupDetails -> listOf(AppRoute.Groups, AppRoute.GroupDetails)
     AppRoute.Members -> listOf(AppRoute.Groups, AppRoute.GroupDetails, AppRoute.Members)
-    AppRoute.ManageMembers -> listOf(
+    AppRoute.AddMember -> listOf(
         AppRoute.Groups,
         AppRoute.GroupDetails,
         AppRoute.Members,
-        AppRoute.ManageMembers
+        AppRoute.AddMember
+    )
+    AppRoute.RemoveMember -> listOf(
+        AppRoute.Groups,
+        AppRoute.GroupDetails,
+        AppRoute.Members,
+        AppRoute.RemoveMember
     )
     AppRoute.Expenses -> listOf(AppRoute.Groups, AppRoute.GroupDetails, AppRoute.Expenses)
     AppRoute.AddExpense -> listOf(
@@ -273,6 +346,33 @@ private fun canonicalPath(destination: AppRoute): List<AppRoute> = when (destina
         AppRoute.GroupDetails,
         AppRoute.Expenses,
         AppRoute.AddExpense
+    )
+    AppRoute.SplitExpense -> listOf(
+        AppRoute.Groups,
+        AppRoute.GroupDetails,
+        AppRoute.Expenses,
+        AppRoute.AddExpense,
+        AppRoute.SplitExpense
+    )
+    AppRoute.UploadReceipt -> listOf(
+        AppRoute.Groups,
+        AppRoute.GroupDetails,
+        AppRoute.Expenses,
+        AppRoute.AddExpense,
+        AppRoute.UploadReceipt
+    )
+    AppRoute.ExpenseSaved -> listOf(
+        AppRoute.Groups,
+        AppRoute.GroupDetails,
+        AppRoute.Expenses,
+        AppRoute.AddExpense,
+        AppRoute.ExpenseSaved
+    )
+    AppRoute.ViewReceipt -> listOf(
+        AppRoute.Groups,
+        AppRoute.GroupDetails,
+        AppRoute.Expenses,
+        AppRoute.ViewReceipt
     )
     AppRoute.DebtSummary -> listOf(AppRoute.Groups, AppRoute.GroupDetails, AppRoute.DebtSummary)
     else -> listOf(menuFor(destination), destination)

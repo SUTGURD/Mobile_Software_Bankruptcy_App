@@ -55,15 +55,15 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Update existing screens and components to match the UI from our hi-fi prototype
 - [x] Update routing to match the new UI
 - [x] Commit `replace AI generated UI with the team's own design`
-- [ ] Add the missing screens from the navigation model and hi-fi prototype:
-    - [ ] AddMember
-    - [ ] RemoveMember
-    - [ ] SplitExpense
-    - [ ] UploadReceipt
-    - [ ] ViewReceipt
-    - [ ] ExpenseSaved
-- [ ] Route the new screens
-- [ ] Commit `add AddExpense, AddMember, RemoveMember, SplitExpense, UploadReceipt, ViewReceipt, and ExpenseSaved screens and route them`
+- [x] Add the missing screens from the navigation model and hi-fi prototype:
+    - [x] AddMember
+    - [x] RemoveMember
+    - [x] SplitExpense
+    - [x] UploadReceipt
+    - [x] ViewReceipt
+    - [x] ExpenseSaved
+- [x] Route the new screens
+- [x] Commit `add AddExpense, AddMember, RemoveMember, SplitExpense, UploadReceipt, ViewReceipt, and ExpenseSaved screens and route them`
 - [ ] Add settings screens
 - [ ] Commit `add profile and notification settings screens`
 

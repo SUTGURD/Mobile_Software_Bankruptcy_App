@@ -242,6 +242,7 @@ internal fun ActionButton(
     secondary: Boolean = false,
     enabled: Boolean = true,
     leadingIcon: Int? = null,
+    danger: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
     Surface(
@@ -255,7 +256,11 @@ internal fun ActionButton(
                 onClick = { onClick?.invoke() }
             ),
         shape = RoundedCornerShape(28.dp),
-        color = if (secondary) Color.White else ForestGreen
+        color = when {
+            danger -> WarmRed
+            secondary -> Color.White
+            else -> ForestGreen
+        }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -266,7 +271,7 @@ internal fun ActionButton(
                 Icon(
                     painter = painterResource(leadingIcon),
                     contentDescription = null,
-                    tint = if (secondary) ForestGreen else Color.White,
+                    tint = if (secondary && !danger) ForestGreen else Color.White,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.size(6.dp))
@@ -274,7 +279,7 @@ internal fun ActionButton(
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleSmall,
-                color = if (secondary) ForestGreen else Color.White,
+                color = if (secondary && !danger) ForestGreen else Color.White,
                 fontWeight = FontWeight.SemiBold
             )
         }

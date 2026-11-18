@@ -3,6 +3,7 @@ package data
 import types.Expense
 import types.ExpenseSplit
 import types.Group
+import types.GroupInvitation
 import types.GroupMember
 import types.MemberRole
 import types.Notification
@@ -115,6 +116,25 @@ object DummyData {
         GroupMember("group-flat", "user-mikkel", MemberRole.MEMBER, LocalDateTime.of(2026, 9, 6, 9, 20))
     )
 
+    val groupInvitations = listOf(
+        GroupInvitation(
+            id = "invitation-weekend-jason",
+            groupId = "group-weekend",
+            inviteeName = "Jason Manden",
+            inviteeEmail = "jason.manden@email.com",
+            invitedByUserId = "user-emma",
+            createdAt = LocalDateTime.of(2026, 11, 12, 14, 0)
+        ),
+        GroupInvitation(
+            id = "invitation-flat-emil",
+            groupId = "group-flat",
+            inviteeName = "Emil Manden",
+            inviteeEmail = "emil.manden@email.com",
+            invitedByUserId = "user-jonas",
+            createdAt = LocalDateTime.of(2026, 11, 13, 10, 30)
+        )
+    )
+
     val expenses = listOf(
         Expense(
             id = "expense-dinner",
@@ -123,7 +143,7 @@ object DummyData {
             description = "Dinner at the harbour",
             createdAt = LocalDateTime.of(2026, 11, 7, 19, 40),
             paidBy = "user-emma",
-            receiptUri = null,
+            receiptUri = "sample://receipts/expense-dinner",
             authorId = "user-emma"
         ),
         Expense(

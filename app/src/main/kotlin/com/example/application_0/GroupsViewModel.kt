@@ -13,11 +13,14 @@ data class GroupSummary(
     val description: String?,
     val type: String?,
     val currency: String,
+    val allowAllMembersToAdd: Boolean,
+    val allowAllMembersToRemove: Boolean,
     val memberCount: Int,
     val expenseCount: Int,
     val totalExpenseAmount: Double,
     val memberStatus: MemberRole,
-    val members: List<GroupMemberSummary>
+    val members: List<GroupMemberSummary>,
+    val invitations: List<GroupInvitationSummary>
 )
 
 data class GroupMemberSummary(
@@ -27,6 +30,14 @@ data class GroupMemberSummary(
     val profileImageUri: String?,
     val memberStatus: MemberRole,
     val joinedAt: LocalDateTime
+)
+
+data class GroupInvitationSummary(
+    val id: String,
+    val name: String,
+    val email: String,
+    val invitedByUserId: String,
+    val createdAt: LocalDateTime
 )
 
 data class GroupsUiState(
@@ -77,19 +88,37 @@ class GroupsViewModel : AuthenticatedViewModel() {
                             )
                         }
                     }
+                val isAdmin = membership.role == MemberRole.ADMIN
+                val invitations = DummyData.groupInvitations
+                    .filter { invitation ->
+                        invitation.groupId == group.id &&
+                            (isAdmin || invitation.invitedByUserId == user.userId)
+                    }
+                    .map { invitation ->
+                        GroupInvitationSummary(
+                            id = invitation.id,
+                            name = invitation.inviteeName,
+                            email = invitation.inviteeEmail,
+                            invitedByUserId = invitation.invitedByUserId,
+                            createdAt = invitation.createdAt
+                        )
+                    }
                 GroupSummary(
                     id = group.id,
                     name = group.name,
                     description = group.description,
                     type = group.type,
                     currency = group.currency,
+                    allowAllMembersToAdd = group.allowAllMembersToAdd,
+                    allowAllMembersToRemove = group.allowAllMembersToRemove,
                     memberCount = DummyData.groupMembers.count { it.groupId == group.id },
                     expenseCount = DummyData.expenses.count { it.groupId == group.id },
                     totalExpenseAmount = DummyData.expenses
                         .filter { it.groupId == group.id }
                         .sumOf { it.amount },
                     memberStatus = membership.role,
-                    members = members
+                    members = members,
+                    invitations = invitations
                 )
             }
         }

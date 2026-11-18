@@ -44,7 +44,6 @@ class NavigationTest {
         assertEquals(AuthenticatedUser("user-emma"), Authentication.currentUser.value)
 
         composeRule.onNodeWithTag("bottom_nav_groups").performClick()
-        composeRule.onNodeWithText("Create group").performClick()
         composeRule.onNodeWithText("Aarhus weekend").performClick()
         composeRule.onNodeWithText("Aarhus weekend").assertIsDisplayed()
 
@@ -328,6 +327,59 @@ class NavigationTest {
         composeRule.onNodeWithText("Debt summary").performClick()
         composeRule.onNodeWithText("YOU ARE OWED · DKK").assertIsDisplayed()
         composeRule.onNodeWithText("+120").assertIsDisplayed()
+    }
+
+    @Test
+    fun invitationsAreVisibleToGroupAdminsAndOpenManagement() {
+        loginAs("emma.nielsen@example.com", "1231")
+
+        composeRule.onNodeWithTag("bottom_nav_groups").performClick()
+        composeRule.onNodeWithTag("group_card_group-weekend").performClick()
+        composeRule.onNodeWithText("Members →").performClick()
+        composeRule.onNodeWithText("Jason Manden").assertIsDisplayed()
+        composeRule.onNodeWithText("Jason Manden").performClick()
+        composeRule.onNodeWithText("Cancel Jason's invitation?").assertIsDisplayed()
+        composeRule.onNodeWithText("Keep invitation").performClick()
+        composeRule.onNodeWithText("Members").assertIsDisplayed()
+    }
+
+    @Test
+    fun invitationsAreHiddenFromMembersWhoDidNotSendThem() {
+        loginAs("jonas.madsen@example.com", "1232")
+
+        composeRule.onNodeWithTag("bottom_nav_groups").performClick()
+        composeRule.onNodeWithTag("group_card_group-weekend").performClick()
+        composeRule.onNodeWithText("Members →").performClick()
+        composeRule.onNodeWithText("Jason Manden").assertIsNotDisplayed()
+        composeRule.onNodeWithContentDescription("Manage Emma Nielsen").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun expenseFlowSupportsSplittingReceiptAttachmentAndReceiptViewing() {
+        loginAs("emma.nielsen@example.com", "1231")
+
+        composeRule.onNodeWithTag("bottom_nav_groups").performClick()
+        composeRule.onNodeWithTag("group_card_group-weekend").performClick()
+        composeRule.onNodeWithText("Expenses").performClick()
+        composeRule.onNodeWithText("Add expense").performClick()
+        composeRule.onNodeWithText("Split equally").performClick()
+        composeRule.onNodeWithText("Split expense").assertIsDisplayed()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithText("Split equally between 3 people", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Split equally between 3 people", substring = true)
+            .assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Attach a receipt").performClick()
+        composeRule.onNodeWithText("Attach sample receipt").performClick()
+        composeRule.onNodeWithText("✓  Receipt attached").assertIsDisplayed()
+        composeRule.onNodeWithText("Save expense").performClick()
+        composeRule.onNodeWithText("Expense saved").assertIsDisplayed()
+        composeRule.onNodeWithText("View group expenses").performClick()
+        composeRule.onNodeWithText("Dinner at the harbour").performClick()
+        composeRule.onNodeWithText("View receipt").assertIsDisplayed()
+        composeRule.onNodeWithText("ÆDEHUS").assertIsDisplayed()
     }
 
     private fun loginAs(email: String, password: String) {
