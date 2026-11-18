@@ -64,8 +64,8 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
     - [x] ExpenseSaved
 - [x] Route the new screens
 - [x] Commit `add AddExpense, AddMember, RemoveMember, SplitExpense, UploadReceipt, ViewReceipt, and ExpenseSaved screens and route them`
-- [ ] Add settings screens
-- [ ] Commit `add profile and notification settings screens`
+- [x] Add settings screens
+- [x] Commit `add profile and notification settings screens`
 
 ## Later
 

@@ -39,7 +39,14 @@ fun NotificationsScreen(
         bottomBarDestination = selectedMenu,
         onNavigate = onNavigate,
         onBack = onBack,
-        backEnabled = backEnabled
+        backEnabled = backEnabled,
+        bottomContent = {
+            ActionButton(
+                "Notification settings",
+                secondary = true,
+                onClick = { onNavigate(AppRoute.NotificationsSettings) }
+            )
+        }
     ) {
         Spacer(modifier = Modifier.height(120.dp))
         ScreenDataStatus(state.isLoading, state.error)

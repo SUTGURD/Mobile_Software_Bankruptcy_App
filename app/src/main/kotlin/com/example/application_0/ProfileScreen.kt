@@ -128,12 +128,28 @@ fun ProfileScreen(onNavigate: (AppRoute) -> Unit, onBack: (() -> Unit)?, backEna
                     AccountDetailRow("Member since", profile.memberSince)
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(contentPadding = 16.dp) {
+                InfoRow(
+                    title = "Profile settings",
+                    detail = "Name, contact information and profile picture",
+                    trailing = "Edit",
+                    onClick = { onNavigate(AppRoute.ProfileSettings) }
+                )
+                Spacer(modifier = Modifier.height(18.dp))
+                InfoRow(
+                    title = "Notification settings",
+                    detail = "Choose which notifications you receive",
+                    trailing = "Edit",
+                    onClick = { onNavigate(AppRoute.NotificationsSettings) }
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ProfilePortrait(profile: UserProfile) {
+internal fun ProfilePortrait(profile: UserProfile) {
     val context = LocalContext.current
     val portrait by produceState<ImageBitmap?>(
         initialValue = null,

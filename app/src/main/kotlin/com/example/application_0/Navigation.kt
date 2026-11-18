@@ -25,6 +25,8 @@ enum class AppRoute(val route: String, val label: String, val hasBackButton: Boo
     Debt("debt", "Debt", false),
     Notifications("notifications", "Notifications", true),
     Profile("profile", "Profile", false),
+    ProfileSettings("profile-settings", "Profile settings", true),
+    NotificationsSettings("notifications-settings", "Notification settings", true),
     CreateGroup("create-group", "Create group", true),
     GroupDetails("group-details", "Group details", true),
     Members("members", "Members", true),
@@ -58,6 +60,8 @@ fun AppNavigation() {
     var menuStacks by remember { mutableStateOf(initialMenuStacks()) }
     var notificationReturnMenu by remember { mutableStateOf(AppRoute.Home) }
     var notificationReturnRoute by remember { mutableStateOf(AppRoute.Home) }
+    var settingsReturnMenu by remember { mutableStateOf(AppRoute.Profile) }
+    var settingsReturnRoute by remember { mutableStateOf(AppRoute.Profile) }
     var backEnabled by remember { mutableStateOf(false) }
 
     fun resetAuthenticatedNavigation() {
@@ -65,6 +69,8 @@ fun AppNavigation() {
         menuStacks = initialMenuStacks()
         notificationReturnMenu = AppRoute.Home
         notificationReturnRoute = AppRoute.Home
+        settingsReturnMenu = AppRoute.Profile
+        settingsReturnRoute = AppRoute.Profile
         ActiveGroup.clear()
     }
 
@@ -85,8 +91,19 @@ fun AppNavigation() {
                 }
             }
             authenticatedUserState.value == null -> Unit
+            destination == AppRoute.ProfileSettings ||
+                destination == AppRoute.NotificationsSettings -> {
+                settingsReturnMenu = selectedMenu
+                settingsReturnRoute = routeNow
+                    ?.takeIf { it !in publicRoutes }
+                    ?: AppRoute.Profile
+                showRoute(destination)
+            }
             destination == AppRoute.Notifications -> {
-                if (routeNow != AppRoute.Notifications) {
+                val returningToNotificationsFromSettings =
+                    routeNow == AppRoute.NotificationsSettings &&
+                        settingsReturnRoute == AppRoute.Notifications
+                if (routeNow != AppRoute.Notifications && !returningToNotificationsFromSettings) {
                     notificationReturnMenu = selectedMenu
                     notificationReturnRoute = routeNow
                         ?.takeIf { it !in publicRoutes && it != AppRoute.Notifications }
@@ -134,6 +151,11 @@ fun AppNavigation() {
 
         val routeNow = currentRouteState.value
         when {
+            routeNow == AppRoute.ProfileSettings ||
+                routeNow == AppRoute.NotificationsSettings -> {
+                selectedMenu = settingsReturnMenu
+                showRoute(settingsReturnRoute)
+            }
             routeNow == AppRoute.Notifications -> {
                 selectedMenu = notificationReturnMenu
                 showRoute(notificationReturnRoute)
@@ -220,6 +242,27 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
+                selectedMenu = selectedMenu
+            )
+        }
+        composable(AppRoute.ProfileSettings.route) {
+            val profileViewModel: UserProfileViewModel = viewModel()
+            val profileState by profileViewModel.uiState.collectAsState()
+            ProfileSettingsScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                profile = profileState.profile
+            )
+        }
+        composable(AppRoute.NotificationsSettings.route) {
+            val profileViewModel: UserProfileViewModel = viewModel()
+            val profileState by profileViewModel.uiState.collectAsState()
+            NotificationsSettingsScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                profile = profileState.profile,
                 selectedMenu = selectedMenu
             )
         }
@@ -319,12 +362,14 @@ private fun initialMenuStacks(): Map<AppRoute, List<AppRoute>> =
 private fun menuFor(destination: AppRoute): AppRoute = when (destination) {
     AppRoute.Home -> AppRoute.Home
     AppRoute.Debt -> AppRoute.Debt
-    AppRoute.Profile -> AppRoute.Profile
+    AppRoute.Profile, AppRoute.ProfileSettings -> AppRoute.Profile
     else -> AppRoute.Groups
 }
 
 private fun canonicalPath(destination: AppRoute): List<AppRoute> = when (destination) {
     AppRoute.Home, AppRoute.Groups, AppRoute.Debt, AppRoute.Profile -> listOf(destination)
+    AppRoute.ProfileSettings -> listOf(AppRoute.Profile, AppRoute.ProfileSettings)
+    AppRoute.NotificationsSettings -> listOf(AppRoute.NotificationsSettings)
     AppRoute.CreateGroup -> listOf(AppRoute.Groups, AppRoute.CreateGroup)
     AppRoute.GroupDetails -> listOf(AppRoute.Groups, AppRoute.GroupDetails)
     AppRoute.Members -> listOf(AppRoute.Groups, AppRoute.GroupDetails, AppRoute.Members)

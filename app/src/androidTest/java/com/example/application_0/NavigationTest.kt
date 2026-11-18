@@ -159,6 +159,31 @@ class NavigationTest {
     }
 
     @Test
+    fun settingsReturnToTheirEntryScreenAndPreserveNotificationsBackTarget() {
+        loginAs("emma.nielsen@example.com", "1231")
+
+        composeRule.onNodeWithTag("bottom_nav_profile").performClick()
+        composeRule.onNodeWithText("Profile settings").performClick()
+        composeRule.onNodeWithText("Email address").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Emma Nielsen").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Notification settings").performClick()
+        composeRule.onNodeWithTag("notification_payments").performClick()
+        composeRule.onNodeWithText("Notification settings").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Emma Nielsen").assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription("Notifications").performClick()
+        composeRule.onNodeWithText("Notification settings").performClick()
+        composeRule.onNodeWithTag("notifications_enabled").performClick()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Notifications").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Emma Nielsen").assertIsDisplayed()
+    }
+
+    @Test
     fun doubleBackTapDoesNotNavigatePastHome() {
         Authentication.logout()
         composeRule.setContent {
