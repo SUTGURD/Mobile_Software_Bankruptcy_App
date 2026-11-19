@@ -11,6 +11,7 @@ import types.Reminder
 import types.User
 
 interface DatabaseOperations {
+    suspend fun createUser(user: User): Boolean
     suspend fun getUsers(): List<User>
     suspend fun getUserById(id: String): User?
     suspend fun getUserByEmail(email: String): User?

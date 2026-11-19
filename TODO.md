@@ -74,8 +74,8 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Create interface for database operations
 - [x] Update all ViewModels to fetch data from the persistent database instead of fetching dummy data
 - [x] Commit `switch from dummy data to SQLite database`
-- [ ] Implement persistent account creation
-- [ ] Commit `add persistent account creation`
+- [x] Implement persistent account creation
+- [x] Commit `add persistent account creation`
 - [ ] Add developer method for resetting the database to reflect the dummy data
 - [ ] Commit `add developer method for resetting the database`
 - [ ] Implement persistent profile settings

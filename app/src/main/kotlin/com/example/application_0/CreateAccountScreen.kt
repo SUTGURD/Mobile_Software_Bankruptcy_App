@@ -17,17 +17,52 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+
+internal fun accountCreationValidationMessage(
+    name: String,
+    email: String,
+    password: String
+): String? {
+    val missingFields = buildList {
+        if (name.trim().isEmpty()) add("full name")
+        if (email.trim().isEmpty()) add("email address")
+        if (password.isEmpty()) add("password")
+    }
+
+    val messages = mutableListOf<String>()
+    if (missingFields.isNotEmpty()) {
+        messages += "Missing ${missingFields.joinToString(", ")}."
+    }
+    if (name.trim().isNotEmpty() && name.trim().length < 2) {
+        messages += "Full name must be at least 2 characters."
+    }
+    if (email.trim().isNotEmpty() &&
+        !Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$").matches(email.trim())
+    ) {
+        messages += "Enter a valid email address."
+    }
+    if (password.isNotEmpty() && password.length < 8) {
+        messages += "Password must be at least 8 characters."
+    }
+    return messages.joinToString("\n").ifEmpty { null }
+}
 
 @Composable
 fun CreateAccountScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
-    backEnabled: Boolean
+    backEnabled: Boolean,
+    onCreateAccount: suspend (String, String, String) -> AccountCreationResult = Authentication::createAccount,
+    onCreated: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     ScreenLayout(
         title = null,
@@ -49,12 +84,18 @@ fun CreateAccountScreen(
             FormField(
                 label = "Full name",
                 value = name,
-                onValueChange = { name = it }
+                onValueChange = {
+                    name = it
+                    errorMessage = null
+                }
             )
             FormField(
                 label = "Email address",
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = {
+                    email = it
+                    errorMessage = null
+                },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
@@ -63,7 +104,10 @@ fun CreateAccountScreen(
             FormField(
                 label = "Password",
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    errorMessage = null
+                },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
@@ -78,7 +122,37 @@ fun CreateAccountScreen(
             color = MutedGreen
         )
         Spacer(modifier = Modifier.height(24.dp))
-        ActionButton("Create account", enabled = false)
+        errorMessage?.let { message ->
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+        ActionButton(
+            "Create account",
+            onClick = {
+                val validationMessage =
+                    accountCreationValidationMessage(name, email, password)
+                if (validationMessage != null) {
+                    errorMessage = validationMessage
+                } else {
+                    coroutineScope.launch {
+                        errorMessage = null
+                        when (onCreateAccount(name, email, password)) {
+                            AccountCreationResult.CREATED -> onCreated()
+                            AccountCreationResult.INVALID_DETAILS ->
+                                errorMessage = "Enter a name, valid email address, and a password of at least 8 characters."
+                            AccountCreationResult.EMAIL_EXISTS ->
+                                errorMessage = "An account already exists for this email address."
+                            AccountCreationResult.DATABASE_ERROR ->
+                                errorMessage = "The account could not be created. Please try again."
+                        }
+                    }
+                }
+            }
+        )
         Spacer(modifier = Modifier.height(10.dp))
         ActionButton(
             "Already a member? Log in",

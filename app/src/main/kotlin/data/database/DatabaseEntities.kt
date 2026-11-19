@@ -3,6 +3,7 @@ package data.database
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
 import types.MemberRole
@@ -39,7 +40,10 @@ data class NotificationSettingsEntity(
     @ColumnInfo(name = "notifications_group_activity") val groupActivity: Boolean
 )
 
-@Entity(tableName = "users")
+@Entity(
+    tableName = "users",
+    indices = [Index(value = ["email"], unique = true)]
+)
 data class UserEntity(
     @PrimaryKey val id: String,
     val name: String,

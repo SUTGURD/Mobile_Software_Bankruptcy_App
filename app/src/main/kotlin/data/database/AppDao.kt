@@ -8,6 +8,9 @@ import androidx.room.Update
 
 @Dao
 interface AppDao {
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertUser(user: UserEntity): Long
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUsers(users: List<UserEntity>)
 

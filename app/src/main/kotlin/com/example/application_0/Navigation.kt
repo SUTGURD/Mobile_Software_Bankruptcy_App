@@ -215,7 +215,11 @@ fun AppNavigation() {
             CreateAccountScreen(
                 onNavigate = ::navigate,
                 onBack = ::goBack,
-                backEnabled = backEnabled
+                backEnabled = backEnabled,
+                onCreated = {
+                    resetAuthenticatedNavigation()
+                    showRoute(AppRoute.Home)
+                }
             )
         }
         composable(AppRoute.Home.route) {

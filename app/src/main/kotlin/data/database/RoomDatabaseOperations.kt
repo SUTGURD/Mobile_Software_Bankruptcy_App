@@ -1,6 +1,7 @@
 package data.database
 
 import android.content.Context
+import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -32,7 +33,7 @@ import types.User
         ReminderEntity::class,
         NotificationEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(DatabaseConverters::class)
@@ -79,6 +80,13 @@ private class DatabaseSeedCallback(private val context: Context) : RoomDatabase.
 }
 
 class RoomDatabaseOperations(private val dao: AppDao) : DatabaseOperations {
+    override suspend fun createUser(user: User): Boolean =
+        try {
+            dao.insertUser(user.toEntity()) != -1L
+        } catch (_: SQLiteConstraintException) {
+            false
+        }
+
     override suspend fun getUsers(): List<User> =
         dao.getUsers().map { it.toModel() }
 
