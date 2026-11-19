@@ -1,6 +1,9 @@
 package com.example.application_0
 
-import data.DummyData
+import data.database.DatabaseOperations
+import data.database.DatabaseProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import domain.amountPersonIsOwedInGroup
 import domain.amountPersonOwesAnotherPerson
 import domain.amountPersonOwesInGroup
@@ -41,7 +44,9 @@ data class DebtSummaryUiState(
     val error: String? = null
 )
 
-class DebtSummaryViewModel : AuthenticatedViewModel() {
+class DebtSummaryViewModel(
+    private val database: DatabaseOperations = DatabaseProvider.current()
+) : AuthenticatedViewModel() {
     private val _uiState = MutableStateFlow(DebtSummaryUiState())
     val uiState = _uiState.asStateFlow()
     private var observedUserId = Authentication.currentUser.value?.userId
@@ -72,30 +77,53 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
             setError("No authenticated user.")
             return
         }
+        viewModelScope.launch {
+            try {
+                val memberships = database.getGroupMembers()
+                val allGroups = database.getGroups()
+                val users = database.getUsers()
+                val expenses = database.getExpenses()
+                val expenseSplits = database.getExpenseSplits()
+                val payments = database.getPayments()
+                val userGroupIds = memberships
+                    .filter { it.userId == user.userId }
+                    .map { it.groupId }
+                    .toSet()
+                val groups = allGroups.filter { it.id in userGroupIds }
+                val results = mutableListOf<DebtResult>()
 
-        val userGroupIds = DummyData.groupMembers
-            .filter { it.userId == user.userId }
-            .map { it.groupId }
-            .toSet()
-        val groups = DummyData.groups.filter { it.id in userGroupIds }
-        val results = mutableListOf<DebtResult>()
+                for (request in requests) {
+                    val result = calculateResult(
+                        request,
+                        user,
+                        groups,
+                        users,
+                        expenses,
+                        expenseSplits,
+                        payments
+                    )
+                    if (result == null) return@launch
+                    results += result
+                }
 
-        for (request in requests) {
-            val result = calculateResult(request, user, groups)
-            if (result == null) return
-            results += result
+                _uiState.value = DebtSummaryUiState(
+                    debtResult = results.lastOrNull(),
+                    debtResults = results
+                )
+            } catch (_: Exception) {
+                setError("Debt data could not be loaded.")
+            }
         }
-
-        _uiState.value = DebtSummaryUiState(
-            debtResult = results.lastOrNull(),
-            debtResults = results
-        )
     }
 
     private fun calculateResult(
         request: DebtRequest,
         user: AuthenticatedUser,
-        groups: List<types.Group>
+        groups: List<types.Group>,
+        users: List<types.User>,
+        expenses: List<types.Expense>,
+        expenseSplits: List<types.ExpenseSplit>,
+        payments: List<types.Payment>
     ): DebtResult? {
         if (request.userId != user.userId) {
             setError("The request user must be the authenticated user.")
@@ -125,7 +153,7 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
                 return null
             }
             if (otherUserId == user.userId ||
-                DummyData.users.none { it.id == otherUserId }
+                users.none { it.id == otherUserId }
             ) {
                 setError("The other user is not valid.")
                 return null
@@ -147,9 +175,9 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
                     user.userId,
                     it,
                     groups,
-                    DummyData.expenses,
-                    DummyData.expenseSplits,
-                    DummyData.payments
+                    expenses,
+                    expenseSplits,
+                    payments
                 )
             } ?: 0.0
             DebtType.TOTAL_OWING -> currency?.let {
@@ -157,24 +185,24 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
                     user.userId,
                     it,
                     groups,
-                    DummyData.expenses,
-                    DummyData.expenseSplits,
-                    DummyData.payments
+                    expenses,
+                    expenseSplits,
+                    payments
                 )
             } ?: 0.0
             DebtType.GROUP_OWED -> amountPersonOwesInGroup(
                 user.userId,
                 requireNotNull(request.groupId),
-                DummyData.expenses,
-                DummyData.expenseSplits,
-                DummyData.payments
+                expenses,
+                expenseSplits,
+                payments
             )
             DebtType.GROUP_OWING -> amountPersonIsOwedInGroup(
                 user.userId,
                 requireNotNull(request.groupId),
-                DummyData.expenses,
-                DummyData.expenseSplits,
-                DummyData.payments
+                expenses,
+                expenseSplits,
+                payments
             )
             DebtType.OWED_BY_USER -> currency?.let {
                 amountPersonOwesAnotherPerson(
@@ -182,9 +210,9 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
                     user.userId,
                     it,
                     groups,
-                    DummyData.expenses,
-                    DummyData.expenseSplits,
-                    DummyData.payments
+                    expenses,
+                    expenseSplits,
+                    payments
                 )
             } ?: 0.0
             DebtType.OWING_TO_USER -> currency?.let {
@@ -193,9 +221,9 @@ class DebtSummaryViewModel : AuthenticatedViewModel() {
                     requireNotNull(request.otherUserId),
                     it,
                     groups,
-                    DummyData.expenses,
-                    DummyData.expenseSplits,
-                    DummyData.payments
+                    expenses,
+                    expenseSplits,
+                    payments
                 )
             } ?: 0.0
         }

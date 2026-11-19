@@ -44,7 +44,8 @@ Respect existing architecture and follow conventions. Documentation: `https://de
 ## Project conventions
 
 - **Data model**: Kotlin data classes represent the application's entities and live in `app/src/main/kotlin/types/models.kt`. Any schema change starts there, not in a screen file.
-- **Dummy data**: Lives in `app/src/main/kotlin/data/` until persistence is added. Treated as the temporary stand-in for a database. Do not allow UI code to assume it is real.
+- **Dummy data**: Lives in `app/src/main/kotlin/data/` and seeds the Room database on first creation. Treat it as initial database content, not as a separate runtime data source.
+- **Database**: Room entities live in `app/src/main/kotlin/data/database/`, and database access is exposed through `DatabaseOperations`. ViewModels must use this interface rather than reading dummy data or entity objects directly.
 - **Screens**: See `TODO.md` for the build order. Screen files live in `app/src/main/kotlin/com/example/application_0/`. Follow the navigation model.
 - **Tests**: Keep unit tests in `app/src/test/` and Android environment tests in `app/src/androidTest/`. Add tests for business logic and UI navigation.
 - **Commits**: Lowercase, imperative, no full stop, terse. The diff explains itself. For example: `add login screen`, not `Implement account login functionality`.

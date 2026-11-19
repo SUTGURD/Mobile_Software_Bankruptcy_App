@@ -1,6 +1,9 @@
 package com.example.application_0
 
-import data.DummyData
+import data.database.DatabaseOperations
+import data.database.DatabaseProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -46,7 +49,9 @@ data class GroupsUiState(
     val error: String? = null
 )
 
-class GroupsViewModel : AuthenticatedViewModel() {
+class GroupsViewModel(
+    private val database: DatabaseOperations = DatabaseProvider.current()
+) : AuthenticatedViewModel() {
     private val _uiState = MutableStateFlow(GroupsUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -65,69 +70,83 @@ class GroupsViewModel : AuthenticatedViewModel() {
             return
         }
 
-        val memberships = DummyData.groupMembers.filter { it.userId == user.userId }
-        val groupsById = DummyData.groups.associateBy { it.id }
-        val groupIds = memberships.map { it.groupId }.toSet()
-        if (ActiveGroup.groupId.value?.let { it in groupIds } != true) {
-            memberships.firstOrNull()?.let { ActiveGroup.select(it.groupId) }
-                ?: ActiveGroup.clear()
-        }
-        val summaries = memberships.mapNotNull { membership ->
-            groupsById[membership.groupId]?.let { group ->
-                val members = DummyData.groupMembers
-                    .filter { it.groupId == group.id }
-                    .mapNotNull { groupMember ->
-                        DummyData.users.firstOrNull { it.id == groupMember.userId }?.let { member ->
-                            GroupMemberSummary(
-                                userId = member.id,
-                                name = member.name,
-                                email = member.email,
-                                profileImageUri = member.profileImageUri,
-                                memberStatus = groupMember.role,
-                                joinedAt = groupMember.joinedAt
-                            )
-                        }
-                    }
-                val isAdmin = membership.role == MemberRole.ADMIN
-                val invitations = DummyData.groupInvitations
-                    .filter { invitation ->
-                        invitation.groupId == group.id &&
-                            (isAdmin || invitation.invitedByUserId == user.userId)
-                    }
-                    .map { invitation ->
-                        GroupInvitationSummary(
-                            id = invitation.id,
-                            name = invitation.inviteeName,
-                            email = invitation.inviteeEmail,
-                            invitedByUserId = invitation.invitedByUserId,
-                            createdAt = invitation.createdAt
+        viewModelScope.launch {
+            try {
+                val memberships = database.getGroupMembers().filter { it.userId == user.userId }
+                val groups = database.getGroups()
+                val users = database.getUsers()
+                val invitations = database.getGroupInvitations()
+                val allExpenses = database.getExpenses()
+                val allMembers = database.getGroupMembers()
+                val groupsById = groups.associateBy { it.id }
+                val usersById = users.associateBy { it.id }
+                val groupIds = memberships.map { it.groupId }.toSet()
+                if (ActiveGroup.groupId.value?.let { it in groupIds } != true) {
+                    memberships.firstOrNull()?.let { ActiveGroup.select(it.groupId) }
+                        ?: ActiveGroup.clear()
+                }
+                val summaries = memberships.mapNotNull { membership ->
+                    groupsById[membership.groupId]?.let { group ->
+                        val members = allMembers
+                            .filter { it.groupId == group.id }
+                            .mapNotNull { groupMember ->
+                                usersById[groupMember.userId]?.let { member ->
+                                    GroupMemberSummary(
+                                        userId = member.id,
+                                        name = member.name,
+                                        email = member.email,
+                                        profileImageUri = member.profileImageUri,
+                                        memberStatus = groupMember.role,
+                                        joinedAt = groupMember.joinedAt
+                                    )
+                                }
+                            }
+                        val isAdmin = membership.role == MemberRole.ADMIN
+                        val groupInvitations = invitations
+                            .filter { invitation ->
+                                invitation.groupId == group.id &&
+                                    (isAdmin || invitation.invitedByUserId == user.userId)
+                            }
+                            .map { invitation ->
+                                GroupInvitationSummary(
+                                    id = invitation.id,
+                                    name = invitation.inviteeName,
+                                    email = invitation.inviteeEmail,
+                                    invitedByUserId = invitation.invitedByUserId,
+                                    createdAt = invitation.createdAt
+                                )
+                            }
+                        GroupSummary(
+                            id = group.id,
+                            name = group.name,
+                            description = group.description,
+                            type = group.type,
+                            currency = group.currency,
+                            allowAllMembersToAdd = group.allowAllMembersToAdd,
+                            allowAllMembersToRemove = group.allowAllMembersToRemove,
+                            memberCount = allMembers.count { it.groupId == group.id },
+                            expenseCount = allExpenses.count { it.groupId == group.id },
+                            totalExpenseAmount = allExpenses
+                                .filter { it.groupId == group.id }
+                                .sumOf { it.amount },
+                            memberStatus = membership.role,
+                            members = members,
+                            invitations = groupInvitations
                         )
                     }
-                GroupSummary(
-                    id = group.id,
-                    name = group.name,
-                    description = group.description,
-                    type = group.type,
-                    currency = group.currency,
-                    allowAllMembersToAdd = group.allowAllMembersToAdd,
-                    allowAllMembersToRemove = group.allowAllMembersToRemove,
-                    memberCount = DummyData.groupMembers.count { it.groupId == group.id },
-                    expenseCount = DummyData.expenses.count { it.groupId == group.id },
-                    totalExpenseAmount = DummyData.expenses
-                        .filter { it.groupId == group.id }
-                        .sumOf { it.amount },
-                    memberStatus = membership.role,
-                    members = members,
-                    invitations = invitations
+                }
+                val hasMissingGroup = memberships.any { it.groupId !in groupsById }
+                _uiState.value = GroupsUiState(
+                    groups = summaries,
+                    isLoading = false,
+                    error = if (hasMissingGroup) "Some group information is unavailable." else null
+                )
+            } catch (_: Exception) {
+                _uiState.value = GroupsUiState(
+                    isLoading = false,
+                    error = "Group data could not be loaded."
                 )
             }
         }
-        val hasMissingGroup = memberships.any { it.groupId !in groupsById }
-
-        _uiState.value = GroupsUiState(
-            groups = summaries,
-            isLoading = false,
-            error = if (hasMissingGroup) "Some group information is unavailable." else null
-        )
     }
 }

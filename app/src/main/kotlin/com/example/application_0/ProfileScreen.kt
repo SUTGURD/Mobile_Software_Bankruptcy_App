@@ -132,7 +132,7 @@ fun ProfileScreen(onNavigate: (AppRoute) -> Unit, onBack: (() -> Unit)?, backEna
             Card(contentPadding = 16.dp) {
                 InfoRow(
                     title = "Profile settings",
-                    detail = "Name, contact information and profile picture",
+                    detail = "Name, contact information, and profile picture",
                     trailing = "Edit",
                     onClick = { onNavigate(AppRoute.ProfileSettings) }
                 )

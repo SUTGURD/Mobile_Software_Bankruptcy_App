@@ -1,6 +1,9 @@
 package com.example.application_0
 
-import data.DummyData
+import data.database.DatabaseOperations
+import data.database.DatabaseProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -24,7 +27,9 @@ data class NotificationsUiState(
     val error: String? = null
 )
 
-class NotificationsViewModel : AuthenticatedViewModel() {
+class NotificationsViewModel(
+    private val database: DatabaseOperations = DatabaseProvider.current()
+) : AuthenticatedViewModel() {
     private val _uiState = MutableStateFlow(NotificationsUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -42,41 +47,54 @@ class NotificationsViewModel : AuthenticatedViewModel() {
             return
         }
 
-        val notifications = DummyData.notifications
-            .filter { it.userId == user.userId }
-            .map { notification ->
-                val groupId = when (notification.type) {
-                    NotificationType.EXPENSE -> DummyData.expenses
-                        .firstOrNull { it.id == notification.relatedEntityId }?.groupId
-                    NotificationType.PAYMENT -> DummyData.payments
-                        .firstOrNull { it.id == notification.relatedEntityId }?.groupId
-                    NotificationType.REMINDER -> DummyData.reminders
-                        .firstOrNull { it.id == notification.relatedEntityId }?.groupId
-                    NotificationType.GROUP -> DummyData.groups
-                        .firstOrNull { it.id == notification.relatedEntityId }?.id
+        viewModelScope.launch {
+            try {
+                val notifications = database.getNotifications()
+                    .filter { it.userId == user.userId }
+                val expenses = database.getExpenses()
+                val payments = database.getPayments()
+                val reminders = database.getReminders()
+                val groups = database.getGroups()
+                val summaries = notifications.map { notification ->
+                    val groupId = when (notification.type) {
+                        NotificationType.EXPENSE -> expenses
+                            .firstOrNull { it.id == notification.relatedEntityId }?.groupId
+                        NotificationType.PAYMENT -> payments
+                            .firstOrNull { it.id == notification.relatedEntityId }?.groupId
+                        NotificationType.REMINDER -> reminders
+                            .firstOrNull { it.id == notification.relatedEntityId }?.groupId
+                        NotificationType.GROUP -> groups
+                            .firstOrNull { it.id == notification.relatedEntityId }?.id
+                    }
+                    val destination = when {
+                        groupId == null -> null
+                        notification.type == NotificationType.EXPENSE ||
+                            notification.type == NotificationType.REMINDER -> AppRoute.Expenses
+                        notification.type == NotificationType.PAYMENT -> AppRoute.DebtSummary
+                        notification.type == NotificationType.GROUP -> AppRoute.GroupDetails
+                        else -> AppRoute.GroupDetails
+                    }
+                    NotificationSummary(
+                        id = notification.id,
+                        type = notification.type,
+                        message = notification.message,
+                        read = notification.read,
+                        createdAt = notification.createdAt,
+                        relatedEntityId = notification.relatedEntityId,
+                        groupId = groupId,
+                        destination = destination
+                    )
                 }
-                val destination = when {
-                    groupId == null -> null
-                    notification.type == NotificationType.EXPENSE ||
-                        notification.type == NotificationType.REMINDER -> AppRoute.Expenses
-                    notification.type == NotificationType.PAYMENT -> AppRoute.DebtSummary
-                    notification.type == NotificationType.GROUP -> AppRoute.GroupDetails
-                    else -> AppRoute.GroupDetails
-                }
-                NotificationSummary(
-                    id = notification.id,
-                    type = notification.type,
-                    message = notification.message,
-                    read = notification.read,
-                    createdAt = notification.createdAt,
-                    relatedEntityId = notification.relatedEntityId,
-                    groupId = groupId,
-                    destination = destination
+                _uiState.value = NotificationsUiState(
+                    notifications = summaries,
+                    isLoading = false
+                )
+            } catch (_: Exception) {
+                _uiState.value = NotificationsUiState(
+                    isLoading = false,
+                    error = "Notification data could not be loaded."
                 )
             }
-        _uiState.value = NotificationsUiState(
-            notifications = notifications,
-            isLoading = false
-        )
+        }
     }
 }

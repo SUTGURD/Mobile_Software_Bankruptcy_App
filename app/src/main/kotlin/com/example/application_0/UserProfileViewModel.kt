@@ -1,9 +1,12 @@
 package com.example.application_0
 
-import data.DummyData
+import data.database.DatabaseOperations
+import data.database.DatabaseProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import types.NotificationSettings
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -27,7 +30,9 @@ data class UserProfileUiState(
     val error: String? = null
 )
 
-class UserProfileViewModel : AuthenticatedViewModel() {
+class UserProfileViewModel(
+    private val database: DatabaseOperations = DatabaseProvider.current()
+) : AuthenticatedViewModel() {
     private val _uiState = MutableStateFlow(UserProfileUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -45,27 +50,36 @@ class UserProfileViewModel : AuthenticatedViewModel() {
             return
         }
 
-        val profile = DummyData.users.firstOrNull { it.id == user.userId }
-        if (profile == null) {
-            _uiState.value = UserProfileUiState(
-                isLoading = false,
-                error = "Authenticated user was not found."
-            )
-            return
-        }
+        viewModelScope.launch {
+            try {
+                val profile = database.getUserById(user.userId)
+                if (profile == null) {
+                    _uiState.value = UserProfileUiState(
+                        isLoading = false,
+                        error = "Authenticated user was not found."
+                    )
+                    return@launch
+                }
 
-        _uiState.value = UserProfileUiState(
-            profile = UserProfile(
-                id = profile.id,
-                name = profile.name,
-                email = profile.email,
-                phoneNumber = profile.phoneNumber,
-                profileImageUri = profile.profileImageUri,
-                memberSince = profile.createdAt.format(memberSinceFormatter),
-                notificationsEnabled = profile.notificationsEnabled,
-                notificationSettings = profile.notificationSettings
-            ),
-            isLoading = false
-        )
+                _uiState.value = UserProfileUiState(
+                    profile = UserProfile(
+                        id = profile.id,
+                        name = profile.name,
+                        email = profile.email,
+                        phoneNumber = profile.phoneNumber,
+                        profileImageUri = profile.profileImageUri,
+                        memberSince = profile.createdAt.format(memberSinceFormatter),
+                        notificationsEnabled = profile.notificationsEnabled,
+                        notificationSettings = profile.notificationSettings
+                    ),
+                    isLoading = false
+                )
+            } catch (_: Exception) {
+                _uiState.value = UserProfileUiState(
+                    isLoading = false,
+                    error = "Profile data could not be loaded."
+                )
+            }
+        }
     }
 }

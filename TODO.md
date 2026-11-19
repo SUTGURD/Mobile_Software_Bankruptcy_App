@@ -67,7 +67,33 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Add settings screens
 - [x] Commit `add profile and notification settings screens`
 
+## Session 5: Data persistence
+
+- [x] Update project dependencies to enable implementing a local database using Room
+- [x] Create SQLite database using Room with entities and entries matching the project's data shapes and dummy data
+- [x] Create interface for database operations
+- [x] Update all ViewModels to fetch data from the persistent database instead of fetching dummy data
+- [x] Commit `switch from dummy data to SQLite database`
+- [ ] Implement persistent account creation
+- [ ] Commit `add persistent account creation`
+- [ ] Add developer method for resetting the database to reflect the dummy data
+- [ ] Commit `add developer method for resetting the database`
+- [ ] Implement persistent profile settings
+- [ ] Commit `add persistent profile settings`
+- [ ] Implement persistent group creation
+- [ ] Commit `add persistent group creation`
+- [ ] Implement persistent member and invitation management
+- [ ] Commit `add persistent member and invitation management`
+- [ ] Implement persistent expense creation
+- [ ] Commit `add persistent expense creation`
+
+
+
 ## Later
 
-- [ ] Switch from dummy data to persistent data storage
+- [ ] Add the ability to send reminders
+- [ ] Add the ability to make payments
+- [ ] Add the ability to accept group invitations and join a group. Also add the ability to leave a group
+- [ ] Add fault tolerance
+- [ ] Add offline availability
 - [ ] Add syncStatus field (pending, synced, or failed) and synchronisation queue with retry and backoff

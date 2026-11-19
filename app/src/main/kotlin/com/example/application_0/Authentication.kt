@@ -1,6 +1,6 @@
 package com.example.application_0
 
-import data.DummyData
+import data.database.DatabaseProvider
 import domain.verifyPassword
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,10 +13,9 @@ object Authentication {
 
     val currentUser: StateFlow<AuthenticatedUser?> = _currentUser.asStateFlow()
 
-    fun authenticate(email: String, password: String): Boolean {
-        val user = DummyData.users.firstOrNull {
-            it.email.equals(email.trim(), ignoreCase = true)
-        } ?: return false
+    suspend fun authenticate(email: String, password: String): Boolean {
+        val user = DatabaseProvider.current().getUserByEmail(email.trim())
+            ?: return false
 
         if (!verifyPassword(password, user.passwordHash)) return false
 
