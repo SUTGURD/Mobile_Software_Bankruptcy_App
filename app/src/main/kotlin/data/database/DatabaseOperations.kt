@@ -20,7 +20,20 @@ enum class MembershipMutationResult {
     FAILURE
 }
 
+enum class ExpenseCreationResult {
+    CREATED,
+    GROUP_NOT_FOUND,
+    NOT_GROUP_MEMBER,
+    INVALID_EXPENSE,
+    FAILURE
+}
+
 interface DatabaseOperations {
+    suspend fun createExpense(
+        expense: Expense,
+        splits: List<ExpenseSplit>,
+        actorUserId: String
+    ): ExpenseCreationResult
     suspend fun createGroup(group: Group, member: GroupMember): Boolean
     suspend fun createGroupInvitation(
         invitation: GroupInvitation,

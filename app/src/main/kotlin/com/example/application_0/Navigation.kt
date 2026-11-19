@@ -89,6 +89,9 @@ fun AppNavigation() {
 
     fun navigate(destination: AppRoute) {
         val routeNow = currentRouteState.value
+        if (destination == AppRoute.AddExpense) {
+            expenseFlowViewModel.beginNewExpense()
+        }
         when {
             destination == AppRoute.Entry -> {
                 resetAuthenticatedNavigation()

@@ -488,6 +488,50 @@ class NavigationTest {
     }
 
     @Test
+    fun savingExpensePersistsItAndShowsItInGroupExpenses() {
+        loginAs("emma.nielsen@example.com", "1231")
+        composeRule.onNodeWithTag("bottom_nav_groups").performClick()
+        openGroup("group-weekend")
+        composeRule.onNodeWithText("Add expense").performClick()
+        composeRule.onNodeWithText("Attach a receipt").performClick()
+        composeRule.onNodeWithText("Attach sample receipt").performClick()
+        composeRule.onNodeWithText("Receipt attached", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("Save expense").performClick()
+        composeRule.onNodeWithText(
+            "Dinner at ÆDEHUS has been added to Aarhus weekend."
+        ).assertIsDisplayed()
+
+        composeRule.onNodeWithText("View group expenses").performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("Dinner at ÆDEHUS")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Dinner at ÆDEHUS").assertIsDisplayed()
+        composeRule.onNodeWithText("Dinner at ÆDEHUS").performClick()
+        composeRule.onNodeWithText("View receipt").assertIsDisplayed()
+        composeRule.onNodeWithText("ÆDEHUS").assertIsDisplayed()
+
+        runBlocking {
+            val database = DatabaseProvider.current()
+            val expense = database.getExpenses().single {
+                it.groupId == "group-weekend" &&
+                    it.description == "Dinner at ÆDEHUS" &&
+                    it.authorId == "user-emma"
+            }
+            val splits = database.getExpenseSplits().filter { it.expenseId == expense.id }
+            val groupMemberIds = database.getGroupMembers()
+                .filter { it.groupId == expense.groupId }
+                .map { it.userId }
+                .toSet()
+            assertEquals(480.0, expense.amount, 0.0)
+            assertEquals("user-emma", expense.paidBy)
+            assertEquals("sample://expense-receipt", expense.receiptUri)
+            assertEquals(groupMemberIds, splits.map { it.userId }.toSet())
+            assertEquals(expense.amount, splits.sumOf { it.amount }, 0.000001)
+        }
+    }
+
+    @Test
     fun groupInvitationsRemainVisibleWhenInvitationNotificationsAreDisabledAndCanBeAccepted() {
         runBlocking {
             val database = DatabaseProvider.current()

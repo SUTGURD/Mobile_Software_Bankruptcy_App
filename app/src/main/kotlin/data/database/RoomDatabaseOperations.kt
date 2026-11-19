@@ -11,6 +11,7 @@ import data.DummyData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import types.Expense
 import types.ExpenseSplit
 import types.Group
@@ -81,6 +82,62 @@ private class DatabaseSeedCallback(private val context: Context) : RoomDatabase.
 
 class RoomDatabaseOperations(private val database: AppDatabase) : DatabaseOperations {
     private val dao: AppDao = database.appDao()
+
+    override suspend fun createExpense(
+        expense: Expense,
+        splits: List<ExpenseSplit>,
+        actorUserId: String
+    ): ExpenseCreationResult = try {
+        database.withTransaction {
+            if (dao.getGroupById(expense.groupId) == null) {
+                return@withTransaction ExpenseCreationResult.GROUP_NOT_FOUND
+            }
+            val memberships = dao.getGroupMembers()
+                .filter { it.groupId == expense.groupId }
+                .map { it.userId }
+                .toSet()
+            if (actorUserId !in memberships) {
+                return@withTransaction ExpenseCreationResult.NOT_GROUP_MEMBER
+            }
+
+            val amountMinorUnits = expense.amount.toMinorUnits()
+                ?: return@withTransaction ExpenseCreationResult.INVALID_EXPENSE
+            val splitMinorUnits = splits.mapNotNull { it.amount.toMinorUnits() }
+            val splitMemberIds = splits.map { it.userId }.toSet()
+            if (amountMinorUnits <= 0 ||
+                expense.paidBy != actorUserId ||
+                expense.authorId != actorUserId ||
+                splits.isEmpty() ||
+                splitMinorUnits.size != splits.size ||
+                splitMinorUnits.any { it < 0 } ||
+                splitMemberIds != memberships ||
+                splits.any {
+                    it.expenseId != expense.id ||
+                        it.userId !in memberships
+                } ||
+                splits.map { it.userId }.distinct().size != splits.size
+            ) {
+                return@withTransaction ExpenseCreationResult.INVALID_EXPENSE
+            }
+
+            val splitTotal = try {
+                splitMinorUnits.fold(0L) { total, amount ->
+                    Math.addExact(total, amount)
+                }
+            } catch (_: ArithmeticException) {
+                return@withTransaction ExpenseCreationResult.INVALID_EXPENSE
+            }
+            if (splitTotal != amountMinorUnits) {
+                return@withTransaction ExpenseCreationResult.INVALID_EXPENSE
+            }
+
+            dao.insertExpense(expense.toEntity())
+            dao.insertExpenseSplitsForCreation(splits.map { it.toEntity() })
+            ExpenseCreationResult.CREATED
+        }
+    } catch (_: Exception) {
+        ExpenseCreationResult.FAILURE
+    }
 
     override suspend fun createGroup(group: Group, member: GroupMember): Boolean =
         try {
@@ -315,6 +372,14 @@ class RoomDatabaseOperations(private val database: AppDatabase) : DatabaseOperat
     override suspend fun getNotifications(): List<Notification> =
         dao.getNotifications().map { it.toModel() }
 }
+
+private fun Double.toMinorUnits(): Long? =
+    try {
+        if (!isFinite()) null
+        else BigDecimal.valueOf(this).movePointRight(2).longValueExact()
+    } catch (_: ArithmeticException) {
+        null
+    }
 
 object DatabaseProvider {
     private var operations: DatabaseOperations? = null

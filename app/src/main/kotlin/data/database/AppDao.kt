@@ -59,8 +59,14 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExpenses(expenses: List<ExpenseEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertExpense(expense: ExpenseEntity)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExpenseSplits(splits: List<ExpenseSplitEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertExpenseSplitsForCreation(splits: List<ExpenseSplitEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPayments(payments: List<PaymentEntity>)

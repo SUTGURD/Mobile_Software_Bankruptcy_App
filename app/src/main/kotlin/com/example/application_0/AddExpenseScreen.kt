@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
@@ -22,9 +23,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun AddExpenseScreen(
@@ -41,8 +45,13 @@ fun AddExpenseScreen(
     val profileViewModel: UserProfileViewModel = viewModel()
     val profileState by profileViewModel.uiState.collectAsState()
     val draft by expenseFlowViewModel.uiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
     val amount = draft.amount
     val description = draft.description
+    val canSave = group != null &&
+        group.memberCount > 0 &&
+        !draft.isSaving &&
+        draft.savedExpenseId == null
 
     ScreenLayout(
         title = "Add expense",
@@ -52,13 +61,26 @@ fun AddExpenseScreen(
         backEnabled = backEnabled,
         bottomContent = {
             ActionButton(
-                "Save expense",
-                enabled = amount.toDoubleOrNull()?.let { it > 0.0 } == true,
-                onClick = { onNavigate(AppRoute.ExpenseSaved) }
+                if (draft.isSaving) "Saving..." else "Save expense",
+                enabled = canSave,
+                onClick = {
+                    group?.let { selectedGroup ->
+                        coroutineScope.launch {
+                            if (expenseFlowViewModel.saveExpense(selectedGroup.id)) {
+                                withContext(Dispatchers.Main.immediate) {
+                                    onNavigate(AppRoute.ExpenseSaved)
+                                }
+                            }
+                        }
+                    }
+                }
             )
         }
     ) {
         ScreenDataStatus(groupsState.isLoading, groupsState.error)
+        if (group == null && !groupsState.isLoading && groupsState.error == null) {
+            ScreenMessage("Join a group before adding an expense.")
+        }
         Text(
             group?.name?.uppercase(Locale.UK) ?: "GROUP",
             style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
@@ -103,7 +125,7 @@ fun AddExpenseScreen(
             label = "Description",
             value = description,
             onValueChange = expenseFlowViewModel::updateDescription,
-            placeholder = "Dinner at ÆDEHUS"
+            placeholder = ""
         )
         Spacer(modifier = Modifier.height(12.dp))
         ExpenseValueCard("Paid by", "You · ${profileState.profile?.name ?: "Current user"}")
@@ -171,6 +193,14 @@ fun AddExpenseScreen(
                     )
                 }
             }
+        }
+        draft.saveError?.let { message ->
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = message,
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.error
+            )
         }
     }
 }
