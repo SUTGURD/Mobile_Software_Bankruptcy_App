@@ -29,7 +29,8 @@ object DummyData {
                 expenses = true,
                 payments = true,
                 reminders = true,
-                groupActivity = true
+                groupActivity = true,
+                invitations = true
             ),
             passwordHash = hashPassword("1231")
         ),
@@ -45,7 +46,8 @@ object DummyData {
                 expenses = true,
                 payments = true,
                 reminders = false,
-                groupActivity = true
+                groupActivity = true,
+                invitations = true
             ),
             passwordHash = hashPassword("1232")
         ),
@@ -61,7 +63,8 @@ object DummyData {
                 expenses = true,
                 payments = false,
                 reminders = true,
-                groupActivity = false
+                groupActivity = false,
+                invitations = true
             ),
             passwordHash = hashPassword("1233")
         ),
@@ -77,7 +80,8 @@ object DummyData {
                 expenses = true,
                 payments = true,
                 reminders = true,
-                groupActivity = true
+                groupActivity = true,
+                invitations = true
             ),
             passwordHash = hashPassword("1234")
         )
@@ -132,6 +136,15 @@ object DummyData {
             inviteeEmail = "emil.manden@email.com",
             invitedByUserId = "user-jonas",
             createdAt = LocalDateTime.of(2026, 11, 13, 10, 30)
+        ),
+        GroupInvitation(
+            id = "invitation-weekend-mikkel",
+            groupId = "group-weekend",
+            inviteeName = "Mikkel Sørensen",
+            inviteeEmail = "mikkel.sorensen@example.com",
+            invitedByUserId = "user-emma",
+            createdAt = LocalDateTime.of(2026, 11, 14, 11, 0),
+            inviteeUserId = "user-mikkel"
         )
     )
 
@@ -243,6 +256,15 @@ object DummyData {
             createdAt = LocalDateTime.of(2026, 9, 6, 9, 20),
             read = true,
             relatedEntityId = "group-flat"
+        ),
+        Notification(
+            id = "notification-invitation-weekend-mikkel",
+            userId = "user-mikkel",
+            type = NotificationType.INVITATIONS,
+            message = "Emma Nielsen invited you to join Aarhus weekend.",
+            createdAt = LocalDateTime.of(2026, 11, 14, 11, 0),
+            read = false,
+            relatedEntityId = "invitation-weekend-mikkel"
         )
     )
 }

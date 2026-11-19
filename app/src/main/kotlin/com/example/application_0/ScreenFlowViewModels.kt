@@ -46,7 +46,10 @@ class ExpenseFlowViewModel : ViewModel() {
 data class MemberActionTarget(
     val name: String,
     val email: String,
-    val isInvitation: Boolean
+    val isInvitation: Boolean,
+    val groupId: String? = null,
+    val memberUserId: String? = null,
+    val invitationId: String? = null
 )
 
 class MemberManagementViewModel : ViewModel() {
@@ -55,5 +58,9 @@ class MemberManagementViewModel : ViewModel() {
 
     fun selectMember(target: MemberActionTarget) {
         _selectedMember.value = target
+    }
+
+    fun clearMember() {
+        _selectedMember.value = null
     }
 }

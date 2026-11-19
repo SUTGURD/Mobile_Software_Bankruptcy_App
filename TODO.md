@@ -82,8 +82,8 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Commit `add persistent profile settings`
 - [x] Implement persistent group creation
 - [x] Commit `add persistent group creation`
-- [ ] Implement persistent member and invitation management
-- [ ] Commit `add persistent member and invitation management`
+- [x] Implement persistent member and invitation management
+- [x] Commit `add persistent member and invitation management`
 - [ ] Implement persistent expense creation
 - [ ] Commit `add persistent expense creation`
 
@@ -93,7 +93,8 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 
 - [ ] Add the ability to send reminders
 - [ ] Add the ability to make payments
-- [ ] Add the ability to accept group invitations and join a group. Also add the ability to leave a group
+- [ ] Add the ability to leave a group
+- [ ] Allow users to view a summary of all transactions
 - [ ] Add fault tolerance
 - [ ] Add offline availability
 - [ ] Add syncStatus field (pending, synced, or failed) and synchronisation queue with retry and backoff

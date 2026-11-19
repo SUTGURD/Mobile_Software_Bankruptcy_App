@@ -159,7 +159,8 @@ fun NotificationsSettingsScreen(
     backEnabled: Boolean,
     profile: UserProfile?,
     selectedMenu: AppRoute,
-    profileViewModel: UserProfileViewModel
+    profileViewModel: UserProfileViewModel,
+    notificationsViewModel: NotificationsViewModel
 ) {
     var notificationsEnabled by rememberSaveable(profile?.id) {
         mutableStateOf(profile?.notificationsEnabled ?: true)
@@ -176,6 +177,9 @@ fun NotificationsSettingsScreen(
     var groupActivityEnabled by rememberSaveable(profile?.id) {
         mutableStateOf(profile?.notificationSettings?.groupActivity ?: true)
     }
+    var invitationsEnabled by rememberSaveable(profile?.id) {
+        mutableStateOf(profile?.notificationSettings?.invitations ?: true)
+    }
     var saveError by remember(profile?.id) { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -184,7 +188,8 @@ fun NotificationsSettingsScreen(
         expenses: Boolean,
         payments: Boolean,
         reminders: Boolean,
-        groupActivity: Boolean
+        groupActivity: Boolean,
+        invitations: Boolean
     ) {
         saveError = null
         coroutineScope.launch {
@@ -194,10 +199,15 @@ fun NotificationsSettingsScreen(
                     expenses = expenses,
                     payments = payments,
                     reminders = reminders,
-                    groupActivity = groupActivity
+                    groupActivity = groupActivity,
+                    invitations = invitations
                 )
             )
-            if (!saved) saveError = "Notification preferences could not be saved."
+            if (!saved) {
+                saveError = "Notification preferences could not be saved."
+            } else {
+                notificationsViewModel.refresh()
+            }
         }
     }
 
@@ -225,7 +235,7 @@ fun NotificationsSettingsScreen(
                     notificationsEnabled = it
                     saveNotificationSettings(
                         it, expensesEnabled, paymentsEnabled,
-                        remindersEnabled, groupActivityEnabled
+                        remindersEnabled, groupActivityEnabled, invitationsEnabled
                     )
                 },
                 testTag = "notifications_enabled"
@@ -245,7 +255,7 @@ fun NotificationsSettingsScreen(
                         expensesEnabled = it
                         saveNotificationSettings(
                             notificationsEnabled, it, paymentsEnabled,
-                            remindersEnabled, groupActivityEnabled
+                            remindersEnabled, groupActivityEnabled, invitationsEnabled
                         )
                     },
                     testTag = "notification_expenses"
@@ -259,7 +269,7 @@ fun NotificationsSettingsScreen(
                         paymentsEnabled = it
                         saveNotificationSettings(
                             notificationsEnabled, expensesEnabled, it,
-                            remindersEnabled, groupActivityEnabled
+                            remindersEnabled, groupActivityEnabled, invitationsEnabled
                         )
                     },
                     testTag = "notification_payments"
@@ -273,24 +283,38 @@ fun NotificationsSettingsScreen(
                         remindersEnabled = it
                         saveNotificationSettings(
                             notificationsEnabled, expensesEnabled, paymentsEnabled,
-                            it, groupActivityEnabled
+                            it, groupActivityEnabled, invitationsEnabled
                         )
                     },
                     testTag = "notification_reminders"
                 )
                 SettingSwitchRow(
                     title = "Group activity",
-                    detail = "Invitations and membership changes",
+                    detail = "Membership changes and group updates",
                     checked = groupActivityEnabled,
                     enabled = notificationsEnabled,
                     onCheckedChange = {
                         groupActivityEnabled = it
                         saveNotificationSettings(
                             notificationsEnabled, expensesEnabled, paymentsEnabled,
-                            remindersEnabled, it
+                            remindersEnabled, it, invitationsEnabled
                         )
                     },
                     testTag = "notification_group_activity"
+                )
+                SettingSwitchRow(
+                    title = "Group invitations",
+                    detail = "Invitations to join groups",
+                    checked = invitationsEnabled,
+                    enabled = notificationsEnabled,
+                    onCheckedChange = {
+                        invitationsEnabled = it
+                        saveNotificationSettings(
+                            notificationsEnabled, expensesEnabled, paymentsEnabled,
+                            remindersEnabled, groupActivityEnabled, it
+                        )
+                    },
+                    testTag = "notification_invitations"
                 )
             }
         }

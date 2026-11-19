@@ -19,7 +19,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import java.time.LocalDate
 import types.NotificationType
 
@@ -28,9 +27,10 @@ fun NotificationsScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    selectedMenu: AppRoute
+    selectedMenu: AppRoute,
+    viewModel: NotificationsViewModel,
+    invitationViewModel: GroupInvitationsViewModel
 ) {
-    val viewModel: NotificationsViewModel = viewModel()
     val state by viewModel.uiState.collectAsState()
 
     ScreenLayout(
@@ -59,67 +59,84 @@ fun NotificationsScreen(
                     val groupId = notification.groupId
                     val openSubject = if (destination != null && groupId != null) {
                         {
-                            ActiveGroup.select(groupId)
+                            if (notification.type == NotificationType.INVITATIONS) {
+                                notification.relatedEntityId?.let(invitationViewModel::selectInvitation)
+                            } else {
+                                ActiveGroup.select(groupId)
+                            }
                             onNavigate(destination)
                         }
                     } else {
                         null
                     }
-                    Card(
-                        modifier = Modifier
-                            .clickable(
-                                enabled = openSubject != null,
-                                onClick = { openSubject?.invoke() }
-                            )
-                            .testTag("notification_${notification.id}")
-                    ) {
-                        Text(
-                            notificationTitle(notification.type),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = ForestGreen,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            notification.message,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MutedGreen
-                        )
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                notificationDate(notification.createdAt.toLocalDate()),
-                                modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = ForestGreen
-                            )
-                            if (openSubject == null) {
-                                Text(
-                                    "Related content unavailable",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = ForestGreen
-                                )
-                            } else {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        "View",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = ForestGreen
-                                    )
-                                    Spacer(modifier = Modifier.size(4.dp))
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_arrow_forward),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp),
-                                        tint = ForestGreen
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    NotificationCard(
+                        notification = notification,
+                        onClick = openSubject,
+                        testTag = "notification_${notification.id}"
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun NotificationCard(
+    notification: NotificationSummary,
+    onClick: (() -> Unit)?,
+    testTag: String
+) {
+    Card(
+        modifier = Modifier
+            .clickable(
+                enabled = onClick != null,
+                onClick = { onClick?.invoke() }
+            )
+            .testTag(testTag)
+    ) {
+        Text(
+            notificationTitle(notification.type),
+            style = MaterialTheme.typography.titleMedium,
+            color = ForestGreen,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            notification.message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MutedGreen
+        )
+        Spacer(modifier = Modifier.height(14.dp))
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                notificationDate(notification.createdAt.toLocalDate()),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                color = ForestGreen
+            )
+            if (onClick == null) {
+                Text(
+                    "Related content unavailable",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ForestGreen
+                )
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "View",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = ForestGreen
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Icon(
+                        painter = painterResource(R.drawable.ic_arrow_forward),
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = ForestGreen
+                    )
                 }
             }
         }
@@ -131,9 +148,10 @@ private fun notificationTitle(type: NotificationType): String = when (type) {
     NotificationType.GROUP -> "The gang’s all here"
     NotificationType.PAYMENT -> "Payment received"
     NotificationType.REMINDER -> "Payment reminder"
+    NotificationType.INVITATIONS -> "Group invitation"
 }
 
-private fun notificationDate(date: LocalDate): String = when (date) {
+internal fun notificationDate(date: LocalDate): String = when (date) {
     LocalDate.now().minusDays(1) -> "Yesterday"
     else -> date.format(java.time.format.DateTimeFormatter.ofPattern("d MMM", java.util.Locale.UK))
 }

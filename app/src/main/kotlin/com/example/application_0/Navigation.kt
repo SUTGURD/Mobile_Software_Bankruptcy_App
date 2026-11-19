@@ -24,6 +24,8 @@ enum class AppRoute(val route: String, val label: String, val hasBackButton: Boo
     Groups("groups", "Groups", false),
     Debt("debt", "Debt", false),
     Notifications("notifications", "Notifications", true),
+    GroupInvitations("group-invitations", "Group invitations", true),
+    ManageGroupInvitation("manage-group-invitation", "Group invitation", true),
     Profile("profile", "Profile", false),
     ProfileSettings("profile-settings", "Profile settings", true),
     NotificationsSettings("notifications-settings", "Notification settings", true),
@@ -49,6 +51,9 @@ fun AppNavigation() {
     val navController = rememberNavController()
     val expenseFlowViewModel: ExpenseFlowViewModel = viewModel()
     val memberManagementViewModel: MemberManagementViewModel = viewModel()
+    val groupsViewModel: GroupsViewModel = viewModel()
+    val notificationsViewModel: NotificationsViewModel = viewModel()
+    val groupInvitationsViewModel: GroupInvitationsViewModel = viewModel()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = AppRoute.entries.firstOrNull {
         it.route == currentBackStackEntry?.destination?.route
@@ -62,6 +67,8 @@ fun AppNavigation() {
     var notificationReturnRoute by remember { mutableStateOf(AppRoute.Home) }
     var settingsReturnMenu by remember { mutableStateOf(AppRoute.Profile) }
     var settingsReturnRoute by remember { mutableStateOf(AppRoute.Profile) }
+    var invitationReturnMenu by remember { mutableStateOf(AppRoute.Profile) }
+    var invitationReturnRoute by remember { mutableStateOf(AppRoute.Profile) }
     var backEnabled by remember { mutableStateOf(false) }
 
     fun resetAuthenticatedNavigation() {
@@ -71,6 +78,8 @@ fun AppNavigation() {
         notificationReturnRoute = AppRoute.Home
         settingsReturnMenu = AppRoute.Profile
         settingsReturnRoute = AppRoute.Profile
+        invitationReturnMenu = AppRoute.Profile
+        invitationReturnRoute = AppRoute.Profile
         ActiveGroup.clear()
     }
 
@@ -91,6 +100,13 @@ fun AppNavigation() {
                 }
             }
             authenticatedUserState.value == null -> Unit
+            destination == AppRoute.ManageGroupInvitation -> {
+                invitationReturnMenu = selectedMenu
+                invitationReturnRoute = routeNow
+                    ?.takeIf { it !in publicRoutes }
+                    ?: selectedMenu
+                showRoute(destination)
+            }
             destination == AppRoute.ProfileSettings ||
                 destination == AppRoute.NotificationsSettings -> {
                 settingsReturnMenu = selectedMenu
@@ -151,6 +167,10 @@ fun AppNavigation() {
 
         val routeNow = currentRouteState.value
         when {
+            routeNow == AppRoute.ManageGroupInvitation -> {
+                selectedMenu = invitationReturnMenu
+                showRoute(invitationReturnRoute)
+            }
             routeNow == AppRoute.ProfileSettings ||
                 routeNow == AppRoute.NotificationsSettings -> {
                 selectedMenu = settingsReturnMenu
@@ -246,7 +266,29 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                selectedMenu = selectedMenu
+                selectedMenu = selectedMenu,
+                viewModel = notificationsViewModel,
+                invitationViewModel = groupInvitationsViewModel
+            )
+        }
+        composable(AppRoute.GroupInvitations.route) {
+            GroupInvitationsScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                selectedMenu = selectedMenu,
+                invitationsViewModel = groupInvitationsViewModel
+            )
+        }
+        composable(AppRoute.ManageGroupInvitation.route) {
+            ManageGroupInvitationScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                selectedMenu = selectedMenu,
+                invitationsViewModel = groupInvitationsViewModel,
+                notificationsViewModel = notificationsViewModel,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.ProfileSettings.route) {
@@ -269,7 +311,8 @@ fun AppNavigation() {
                 backEnabled = backEnabled,
                 profile = profileState.profile,
                 selectedMenu = selectedMenu,
-                profileViewModel = profileViewModel
+                profileViewModel = profileViewModel,
+                notificationsViewModel = notificationsViewModel
             )
         }
         composable(AppRoute.Profile.route) {
@@ -290,14 +333,17 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                memberViewModel = memberManagementViewModel
+                memberViewModel = memberManagementViewModel,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.AddMember.route) {
             AddMemberScreen(
                 onNavigate = ::navigate,
                 onBack = ::goBack,
-                backEnabled = backEnabled
+                backEnabled = backEnabled,
+                groupsViewModel = groupsViewModel,
+                invitationsViewModel = groupInvitationsViewModel
             )
         }
         composable(AppRoute.RemoveMember.route) {
@@ -305,7 +351,10 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                memberViewModel = memberManagementViewModel
+                memberViewModel = memberManagementViewModel,
+                groupsViewModel = groupsViewModel,
+                invitationsViewModel = groupInvitationsViewModel,
+                notificationsViewModel = notificationsViewModel
             )
         }
         composable(AppRoute.Expenses.route) {
@@ -368,13 +417,15 @@ private fun initialMenuStacks(): Map<AppRoute, List<AppRoute>> =
 private fun menuFor(destination: AppRoute): AppRoute = when (destination) {
     AppRoute.Home -> AppRoute.Home
     AppRoute.Debt -> AppRoute.Debt
-    AppRoute.Profile, AppRoute.ProfileSettings -> AppRoute.Profile
+    AppRoute.Profile, AppRoute.ProfileSettings, AppRoute.GroupInvitations,
+    AppRoute.ManageGroupInvitation -> AppRoute.Profile
     else -> AppRoute.Groups
 }
 
 private fun canonicalPath(destination: AppRoute): List<AppRoute> = when (destination) {
     AppRoute.Home, AppRoute.Groups, AppRoute.Debt, AppRoute.Profile -> listOf(destination)
     AppRoute.ProfileSettings -> listOf(AppRoute.Profile, AppRoute.ProfileSettings)
+    AppRoute.GroupInvitations -> listOf(AppRoute.Profile, AppRoute.GroupInvitations)
     AppRoute.NotificationsSettings -> listOf(AppRoute.NotificationsSettings)
     AppRoute.CreateGroup -> listOf(AppRoute.Groups, AppRoute.CreateGroup)
     AppRoute.GroupDetails -> listOf(AppRoute.Groups, AppRoute.GroupDetails)

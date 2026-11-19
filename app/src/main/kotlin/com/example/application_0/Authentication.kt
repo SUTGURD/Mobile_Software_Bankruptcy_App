@@ -10,6 +10,8 @@ import types.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class AuthenticatedUser(val userId: String)
 
@@ -51,7 +53,9 @@ object Authentication {
             return LoginResult.INVALID_CREDENTIALS
         }
 
-        _currentUser.value = AuthenticatedUser(user.id)
+        withContext(Dispatchers.Main.immediate) {
+            _currentUser.value = AuthenticatedUser(user.id)
+        }
         return LoginResult.AUTHENTICATED
     }
 
@@ -91,7 +95,9 @@ object Authentication {
             passwordHash = hashPassword(password)
         )
         return if (DatabaseProvider.current().createUser(user)) {
-            _currentUser.value = AuthenticatedUser(user.id)
+            withContext(Dispatchers.Main.immediate) {
+                _currentUser.value = AuthenticatedUser(user.id)
+            }
             AccountCreationResult.CREATED
         } else {
             AccountCreationResult.DATABASE_ERROR

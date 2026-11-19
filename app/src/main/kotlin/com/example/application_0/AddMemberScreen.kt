@@ -7,23 +7,32 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import data.database.MembershipMutationResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun AddMemberScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
-    backEnabled: Boolean
+    backEnabled: Boolean,
+    groupsViewModel: GroupsViewModel,
+    invitationsViewModel: GroupInvitationsViewModel
 ) {
-    val groupsViewModel: GroupsViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
     val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
         ?: groupsState.groups.firstOrNull()
-    var email by remember { mutableStateOf("jason.manden@email.com") }
+    var email by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     ScreenLayout(
         title = "Add member",
@@ -35,8 +44,32 @@ fun AddMemberScreen(
         bottomContent = {
             ActionButton(
                 "Send invitation",
-                enabled = email.contains('@'),
-                onClick = { onNavigate(AppRoute.Members) }
+                enabled = group != null && email.contains('@'),
+                onClick = {
+                    val selectedGroup = group ?: return@ActionButton
+                    coroutineScope.launch {
+                        val result = invitationsViewModel.createInvitation(selectedGroup.id, email)
+                        withContext(Dispatchers.Main.immediate) {
+                            when (result) {
+                            MembershipMutationResult.SUCCESS -> {
+                                error = null
+                                invitationsViewModel.refresh()
+                                groupsViewModel.refresh()
+                                onBack()
+                            }
+                            MembershipMutationResult.INVALID_INVITEE ->
+                                error = "No account matches this email address."
+                            MembershipMutationResult.ALREADY_MEMBER ->
+                                error = "This person is already a group member."
+                            MembershipMutationResult.ALREADY_INVITED ->
+                                error = "An invitation has already been sent to this person."
+                            MembershipMutationResult.NOT_ALLOWED ->
+                                error = "You do not have permission to invite members."
+                            else -> error = "The invitation could not be sent."
+                            }
+                        }
+                    }
+                }
             )
         }
     ) {
@@ -49,8 +82,17 @@ fun AddMemberScreen(
             label = "Friend's email",
             value = email,
             onValueChange = { email = it },
-            placeholder = "name@example.com"
+            placeholder = "name@example.com",
+            modifier = Modifier.testTag("group_invitation_email")
         )
+        error?.let { message ->
+            Spacer(modifier = Modifier.height(12.dp))
+            androidx.compose.material3.Text(
+                text = message,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.error,
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall
+            )
+        }
         Spacer(modifier = Modifier.height(36.dp))
         Card(color = SoftGreen, contentPadding = 18.dp) {
             androidx.compose.material3.Text(

@@ -24,7 +24,8 @@ fun User.toEntity() = UserEntity(
         expenses = notificationSettings.expenses,
         payments = notificationSettings.payments,
         reminders = notificationSettings.reminders,
-        groupActivity = notificationSettings.groupActivity
+        groupActivity = notificationSettings.groupActivity,
+        invitations = notificationSettings.invitations
     ),
     passwordHash = passwordHash
 )
@@ -42,7 +43,8 @@ fun UserEntity.toModel() = User(
         expenses = notificationSettings.expenses,
         payments = notificationSettings.payments,
         reminders = notificationSettings.reminders,
-        groupActivity = notificationSettings.groupActivity
+        groupActivity = notificationSettings.groupActivity,
+        invitations = notificationSettings.invitations
     ),
     passwordHash = passwordHash
 )
@@ -61,10 +63,14 @@ fun GroupMember.toEntity() = GroupMemberEntity(groupId, userId, role, joinedAt)
 fun GroupMemberEntity.toModel() = GroupMember(groupId, userId, role, joinedAt)
 
 fun GroupInvitation.toEntity() =
-    GroupInvitationEntity(id, groupId, inviteeName, inviteeEmail, invitedByUserId, createdAt)
+    GroupInvitationEntity(
+        id, groupId, inviteeName, inviteeEmail, invitedByUserId, createdAt, inviteeUserId
+    )
 
 fun GroupInvitationEntity.toModel() =
-    GroupInvitation(id, groupId, inviteeName, inviteeEmail, invitedByUserId, createdAt)
+    GroupInvitation(
+        id, groupId, inviteeName, inviteeEmail, invitedByUserId, createdAt, inviteeUserId
+    )
 
 fun Expense.toEntity() =
     ExpenseEntity(id, groupId, amount, description, createdAt, paidBy, receiptUri, authorId)

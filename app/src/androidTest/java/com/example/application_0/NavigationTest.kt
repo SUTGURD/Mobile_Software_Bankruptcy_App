@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -25,6 +26,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlinx.coroutines.runBlocking
+import types.NotificationType
 
 @RunWith(AndroidJUnit4::class)
 class NavigationTest {
@@ -69,18 +71,26 @@ class NavigationTest {
         assertEquals(AuthenticatedUser("user-emma"), Authentication.currentUser.value)
 
         composeRule.onNodeWithTag("bottom_nav_groups").performClick()
-        composeRule.onNodeWithText("Aarhus weekend").performClick()
+        openGroup("group-weekend")
         composeRule.onNodeWithText("Aarhus weekend").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Members →").performClick()
+        composeRule.onNodeWithText("Members →", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Invite a friend").performClick()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("Expenses").performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("Expenses", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Expenses", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Add expense").performClick()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("Debt summary").performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("Debt summary", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Debt summary", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Debt summary").assertIsDisplayed()
     }
 
@@ -150,6 +160,10 @@ class NavigationTest {
         composeRule.onNodeWithTag("login_password").performTextInput("1231")
         composeRule.onNodeWithText("Log in").performClick()
 
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithText("0 DKK").fetchSemanticsNodes().isNotEmpty() &&
+                composeRule.onAllNodesWithText("300 DKK").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("0 DKK").assertIsDisplayed()
         composeRule.onNodeWithText("300 DKK").assertIsDisplayed()
         val homeNotifications = composeRule.onNodeWithContentDescription("Notifications")
@@ -195,6 +209,13 @@ class NavigationTest {
 
         composeRule.onNodeWithText("Notification settings").performClick()
         composeRule.onNodeWithTag("notification_payments").performClick()
+        composeRule.onNodeWithTag("notification_invitations").performClick()
+        composeRule.waitUntil(5_000) {
+            runBlocking {
+                DatabaseProvider.current().getUserById("user-emma")
+                    ?.notificationSettings?.invitations == false
+            }
+        }
         composeRule.onNodeWithText("Notification settings").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("Emma Nielsen").assertIsDisplayed()
@@ -223,7 +244,10 @@ class NavigationTest {
         composeRule.onNodeWithText("Log in").performClick()
         composeRule.onNodeWithText("Hey, Emma.").assertIsDisplayed()
         composeRule.onNodeWithTag("bottom_nav_groups").performClick()
-        composeRule.onNodeWithTag("group_card_group-weekend").performClick()
+        openGroup("group-weekend")
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("Debt summary").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Debt summary").assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription("Back").performTouchInput {
@@ -250,10 +274,18 @@ class NavigationTest {
         composeRule.onNodeWithContentDescription("Notifications").performClick()
         composeRule.onNodeWithTag("notification_notification-dinner").performClick()
 
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("Dinner at the harbour")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Expenses").assertIsDisplayed()
         composeRule.onNodeWithText("Aarhus weekend").assertIsDisplayed()
         composeRule.onNodeWithText("Dinner at the harbour").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("TOTAL GROUP SPENDING")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("TOTAL GROUP SPENDING").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithTag("bottom_nav_home").performClick()
@@ -265,10 +297,14 @@ class NavigationTest {
         loginAs("jonas.madsen@example.com", "1232")
 
         composeRule.onNodeWithTag("bottom_nav_groups").performClick()
-        composeRule.onNodeWithTag("group_card_group-flat").performClick()
+        openGroup("group-flat")
         composeRule.onNodeWithText("Nørrebro flat").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Debt summary").performClick()
+        composeRule.onNodeWithText("Debt summary", useUnmergedTree = true).performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("PAYMENTS TO YOU")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("PAYMENTS TO YOU").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Notifications").assertIsDisplayed()
         composeRule.onNodeWithTag("bottom_nav_groups").assertIsSelected()
@@ -295,7 +331,7 @@ class NavigationTest {
     fun logoutResetsMenuStacksForTheNextUser() {
         loginAs("jonas.madsen@example.com", "1232")
         composeRule.onNodeWithTag("bottom_nav_groups").performClick()
-        composeRule.onNodeWithTag("group_card_group-flat").performClick()
+        openGroup("group-flat")
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithTag("bottom_nav_profile").performClick()
         composeRule.onNodeWithText("Log out").performClick()
@@ -350,12 +386,19 @@ class NavigationTest {
         composeRule.onNodeWithText("Log in").performClick()
         composeRule.onNodeWithText("Groups").performClick()
 
-        val firstCard = composeRule.onNodeWithTag("group_card_group-weekend").getBoundsInRoot()
+        waitForTag("group_card_group-flat")
+        val firstCard = composeRule.onNodeWithTag(
+            "group_card_group-weekend",
+            useUnmergedTree = true
+        ).getBoundsInRoot()
         val firstTitle = composeRule.onNodeWithText(
             "Aarhus weekend",
             useUnmergedTree = true
         ).getBoundsInRoot()
-        val secondCard = composeRule.onNodeWithTag("group_card_group-flat").getBoundsInRoot()
+        val secondCard = composeRule.onNodeWithTag(
+            "group_card_group-flat",
+            useUnmergedTree = true
+        ).getBoundsInRoot()
         assertTrue(firstTitle.left - firstCard.left >= 20.dp)
         assertTrue(firstTitle.top - firstCard.top >= 20.dp)
         assertTrue(secondCard.top - firstCard.bottom >= 11.dp)
@@ -366,6 +409,9 @@ class NavigationTest {
         loginAs("jonas.madsen@example.com", "1232")
 
         composeRule.onNodeWithTag("bottom_nav_debt").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithText("-30").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("-30").assertIsDisplayed()
         composeRule.onNodeWithText("YOU ARE OWED").assertIsDisplayed()
         composeRule.onNodeWithText("YOU OWE").assertIsDisplayed()
@@ -375,6 +421,10 @@ class NavigationTest {
         composeRule.onNodeWithTag("debt_group_card_group-flat").performClick()
         composeRule.onNodeWithText("Nørrebro flat").assertIsDisplayed()
         composeRule.onNodeWithText("Debt summary").performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("YOU ARE OWED · DKK")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("YOU ARE OWED · DKK").assertIsDisplayed()
         composeRule.onNodeWithText("+120").assertIsDisplayed()
     }
@@ -384,8 +434,8 @@ class NavigationTest {
         loginAs("emma.nielsen@example.com", "1231")
 
         composeRule.onNodeWithTag("bottom_nav_groups").performClick()
-        composeRule.onNodeWithTag("group_card_group-weekend").performClick()
-        composeRule.onNodeWithText("Members →").performClick()
+        openGroup("group-weekend")
+        composeRule.onNodeWithText("Members →", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Jason Manden").assertIsDisplayed()
         composeRule.onNodeWithText("Jason Manden").performClick()
         composeRule.onNodeWithText("Cancel Jason's invitation?").assertIsDisplayed()
@@ -398,10 +448,216 @@ class NavigationTest {
         loginAs("jonas.madsen@example.com", "1232")
 
         composeRule.onNodeWithTag("bottom_nav_groups").performClick()
-        composeRule.onNodeWithTag("group_card_group-weekend").performClick()
-        composeRule.onNodeWithText("Members →").performClick()
+        openGroup("group-weekend")
+        composeRule.onNodeWithText("Members →", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Jason Manden").assertIsNotDisplayed()
         composeRule.onNodeWithContentDescription("Manage Emma Nielsen").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun sendingInvitationPersistsInvitationAndRecipientNotification() {
+        runBlocking {
+            assertTrue(
+                DatabaseProvider.current().removeGroupInvitation(
+                    "invitation-weekend-mikkel",
+                    "user-emma"
+                ) == data.database.MembershipMutationResult.SUCCESS
+            )
+        }
+        loginAs("emma.nielsen@example.com", "1231")
+
+        composeRule.onNodeWithTag("bottom_nav_groups").performClick()
+        openGroup("group-weekend")
+        composeRule.onNodeWithText("Members →", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithText("Invite a friend").performClick()
+        composeRule.onNodeWithTag("group_invitation_email")
+            .performTextInput("mikkel.sorensen@example.com")
+        composeRule.onNodeWithText("Send invitation").performClick()
+        composeRule.onNodeWithText("Members").assertIsDisplayed()
+
+        runBlocking {
+            val invitation = DatabaseProvider.current().getGroupInvitations().first {
+                it.groupId == "group-weekend" && it.inviteeUserId == "user-mikkel"
+            }
+            val notification = DatabaseProvider.current().getNotifications().first {
+                it.type == NotificationType.INVITATIONS &&
+                    it.relatedEntityId == invitation.id
+            }
+            assertEquals("user-mikkel", notification.userId)
+        }
+    }
+
+    @Test
+    fun groupInvitationsRemainVisibleWhenInvitationNotificationsAreDisabledAndCanBeAccepted() {
+        runBlocking {
+            val database = DatabaseProvider.current()
+            val user = checkNotNull(database.getUserById("user-mikkel"))
+            database.updateUser(
+                user.copy(
+                    notificationsEnabled = true,
+                    notificationSettings = user.notificationSettings.copy(invitations = false)
+                )
+            )
+        }
+        loginAs("mikkel.sorensen@example.com", "1234")
+
+        composeRule.onNodeWithTag("bottom_nav_profile").performClick()
+        composeRule.onNodeWithText("Group invitations").performClick()
+        composeRule.onNodeWithTag("group_invitation_invitation-weekend-mikkel")
+            .assertIsDisplayed()
+            .performClick()
+        composeRule.onNodeWithText("You are invited to join").assertIsDisplayed()
+        composeRule.onNodeWithText("mikkel.sorensen@example.com").assertIsNotDisplayed()
+        composeRule.onNodeWithText("Accept invitation").performClick()
+        composeRule.onNodeWithText("Group invitations").assertIsDisplayed()
+        composeRule.onNodeWithTag("group_invitation_invitation-weekend-mikkel")
+            .assertIsNotDisplayed()
+
+        runBlocking {
+            val database = DatabaseProvider.current()
+            assertTrue(
+                database.getGroupMembers().any {
+                    it.groupId == "group-weekend" && it.userId == "user-mikkel"
+                }
+            )
+            assertTrue(
+                database.getGroupInvitations().none {
+                    it.id == "invitation-weekend-mikkel"
+                }
+            )
+            val notifications = database.getNotifications()
+            assertTrue(
+                notifications.none {
+                    it.type == NotificationType.INVITATIONS &&
+                        it.relatedEntityId == "invitation-weekend-mikkel"
+                }
+            )
+            assertTrue(
+                notifications.any {
+                    it.id ==
+                        "notification-group-joined-group-weekend-user-mikkel-invitation-weekend-mikkel"
+                }
+            )
+            assertTrue(
+                notifications.any {
+                    it.id ==
+                        "notification-group-joined-group-weekend-user-emma-invitation-weekend-mikkel"
+                }
+            )
+            assertTrue(
+                notifications.any {
+                    it.id ==
+                        "notification-group-joined-group-weekend-user-jonas-invitation-weekend-mikkel"
+                }
+            )
+            assertTrue(
+                notifications.none {
+                    it.id ==
+                        "notification-group-joined-group-weekend-user-freja-invitation-weekend-mikkel"
+                }
+            )
+        }
+    }
+
+    @Test
+    fun notificationsAndGroupInvitationsShowNewestEntriesFirst() {
+        runBlocking {
+            val database = DatabaseProvider.current()
+            val user = checkNotNull(database.getUserById("user-mikkel"))
+            database.updateUser(
+                user.copy(
+                    notificationsEnabled = true,
+                    notificationSettings = user.notificationSettings.copy(
+                        groupActivity = true,
+                        invitations = true
+                    )
+                )
+            )
+        }
+        loginAs("mikkel.sorensen@example.com", "1234")
+
+        composeRule.onNodeWithContentDescription("Notifications").performClick()
+        waitForTag("notification_notification-invitation-weekend-mikkel")
+        waitForTag("notification_notification-group")
+        val newestNotificationTop = composeRule
+            .onNodeWithTag("notification_notification-invitation-weekend-mikkel")
+            .getBoundsInRoot().top
+        val olderNotificationTop = composeRule
+            .onNodeWithTag("notification_notification-group")
+            .getBoundsInRoot().top
+        assertTrue(newestNotificationTop < olderNotificationTop)
+
+        composeRule.onNodeWithTag("bottom_nav_profile").performClick()
+        composeRule.onNodeWithText("Group invitations").performClick()
+        waitForTag("group_invitation_invitation-weekend-mikkel")
+        waitForTag("group_invitation_group-flat")
+        val newestInvitationTop = composeRule
+            .onNodeWithTag("group_invitation_invitation-weekend-mikkel")
+            .getBoundsInRoot().top
+        val olderInvitationTop = composeRule
+            .onNodeWithTag("group_invitation_group-flat")
+            .getBoundsInRoot().top
+        assertTrue(newestInvitationTop < olderInvitationTop)
+    }
+
+    @Test
+    fun invitationNotificationReturnsThroughNotificationsToItsOriginalScreen() {
+        runBlocking {
+            val database = DatabaseProvider.current()
+            val user = checkNotNull(database.getUserById("user-mikkel"))
+            database.updateUser(
+                user.copy(
+                    notificationsEnabled = true,
+                    notificationSettings = user.notificationSettings.copy(invitations = true)
+                )
+            )
+        }
+        loginAs("mikkel.sorensen@example.com", "1234")
+
+        composeRule.onNodeWithTag("bottom_nav_debt").performClick()
+        composeRule.onNodeWithContentDescription("Notifications").performClick()
+        composeRule.onNodeWithTag("notification_notification-invitation-weekend-mikkel")
+            .performClick()
+        composeRule.onNodeWithText("You are invited to join").assertIsDisplayed()
+        composeRule.onNodeWithText("Dismiss invitation").performClick()
+        composeRule.onNodeWithText("Notifications").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("YOUR NET BALANCE · DKK").assertIsDisplayed()
+
+        runBlocking {
+            val database = DatabaseProvider.current()
+            assertTrue(
+                database.getGroupInvitations().none {
+                    it.id == "invitation-weekend-mikkel"
+                }
+            )
+            assertTrue(
+                database.getNotifications().none {
+                    it.type == NotificationType.INVITATIONS &&
+                        it.relatedEntityId == "invitation-weekend-mikkel"
+                }
+            )
+        }
+    }
+
+    @Test
+    fun groupMemberRemovalIsPersisted() {
+        loginAs("emma.nielsen@example.com", "1231")
+
+        composeRule.onNodeWithTag("bottom_nav_groups").performClick()
+        openGroup("group-weekend")
+        composeRule.onNodeWithText("Members →", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithText("Jonas Madsen").performClick()
+        composeRule.onAllNodesWithText("Remove member")[1].performClick()
+        composeRule.onNodeWithText("Members").assertIsDisplayed()
+
+        runBlocking {
+            assertTrue(
+                DatabaseProvider.current().getGroupMembers().none {
+                    it.groupId == "group-weekend" && it.userId == "user-jonas"
+                }
+            )
+        }
     }
 
     @Test
@@ -409,7 +665,7 @@ class NavigationTest {
         loginAs("emma.nielsen@example.com", "1231")
 
         composeRule.onNodeWithTag("bottom_nav_groups").performClick()
-        composeRule.onNodeWithTag("group_card_group-weekend").performClick()
+        openGroup("group-weekend")
         composeRule.onNodeWithText("Expenses").performClick()
         composeRule.onNodeWithText("Add expense").performClick()
         composeRule.onNodeWithText("Split equally").performClick()
@@ -427,7 +683,10 @@ class NavigationTest {
         composeRule.onNodeWithText("Save expense").performClick()
         composeRule.onNodeWithText("Expense saved").assertIsDisplayed()
         composeRule.onNodeWithText("View group expenses").performClick()
-        composeRule.onNodeWithText("Dinner at the harbour").performClick()
+        composeRule.onNodeWithText(
+            "Dinner at the harbour",
+            useUnmergedTree = true
+        ).performClick()
         composeRule.onNodeWithText("View receipt").assertIsDisplayed()
         composeRule.onNodeWithText("ÆDEHUS").assertIsDisplayed()
     }
@@ -444,5 +703,25 @@ class NavigationTest {
         composeRule.onNodeWithTag("login_email").performTextInput(email)
         composeRule.onNodeWithTag("login_password").performTextInput(password)
         composeRule.onNodeWithText("Log in").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("bottom_nav_home").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun openGroup(groupId: String) {
+        val tag = "group_card_$groupId"
+        waitForTag(tag)
+        composeRule.onNodeWithTag(tag, useUnmergedTree = true).performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("Members →", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun waitForTag(tag: String) {
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithTag(tag, useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }

@@ -10,8 +10,36 @@ import types.Payment
 import types.Reminder
 import types.User
 
+enum class MembershipMutationResult {
+    SUCCESS,
+    NOT_FOUND,
+    NOT_ALLOWED,
+    INVALID_INVITEE,
+    ALREADY_MEMBER,
+    ALREADY_INVITED,
+    FAILURE
+}
+
 interface DatabaseOperations {
     suspend fun createGroup(group: Group, member: GroupMember): Boolean
+    suspend fun createGroupInvitation(
+        invitation: GroupInvitation,
+        notification: Notification
+    ): MembershipMutationResult
+    suspend fun resolveGroupInvitation(
+        invitationId: String,
+        userId: String,
+        accept: Boolean
+    ): MembershipMutationResult
+    suspend fun removeGroupInvitation(
+        invitationId: String,
+        actorUserId: String
+    ): MembershipMutationResult
+    suspend fun removeGroupMember(
+        groupId: String,
+        memberUserId: String,
+        actorUserId: String
+    ): MembershipMutationResult
     suspend fun updateUser(user: User): Boolean
     suspend fun resetDatabaseToDummyData(): Boolean
     suspend fun createUser(user: User): Boolean

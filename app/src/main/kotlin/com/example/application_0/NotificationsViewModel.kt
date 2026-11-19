@@ -37,6 +37,10 @@ class NotificationsViewModel(
         observeAuthenticatedUser(::loadNotifications)
     }
 
+    fun refresh() {
+        loadNotifications(Authentication.currentUser.value)
+    }
+
     private fun loadNotifications(user: AuthenticatedUser?) {
         _uiState.update { it.copy(isLoading = true, error = null) }
         if (user == null) {
@@ -49,12 +53,19 @@ class NotificationsViewModel(
 
         viewModelScope.launch {
             try {
+                val recipient = database.getUserById(user.userId)
+                    ?: throw IllegalStateException("Authenticated user was not found.")
                 val notifications = database.getNotifications()
-                    .filter { it.userId == user.userId }
+                    .filter { notification ->
+                        notification.userId == user.userId &&
+                            recipient.notificationsEnabled &&
+                            notification.type.isEnabledFor(recipient.notificationSettings)
+                    }
                 val expenses = database.getExpenses()
                 val payments = database.getPayments()
                 val reminders = database.getReminders()
                 val groups = database.getGroups()
+                val invitations = database.getGroupInvitations()
                 val summaries = notifications.map { notification ->
                     val groupId = when (notification.type) {
                         NotificationType.EXPENSE -> expenses
@@ -65,8 +76,12 @@ class NotificationsViewModel(
                             .firstOrNull { it.id == notification.relatedEntityId }?.groupId
                         NotificationType.GROUP -> groups
                             .firstOrNull { it.id == notification.relatedEntityId }?.id
+                        NotificationType.INVITATIONS -> invitations
+                            .firstOrNull { it.id == notification.relatedEntityId }?.groupId
                     }
                     val destination = when {
+                        notification.type == NotificationType.INVITATIONS &&
+                            notification.relatedEntityId != null -> AppRoute.ManageGroupInvitation
                         groupId == null -> null
                         notification.type == NotificationType.EXPENSE ||
                             notification.type == NotificationType.REMINDER -> AppRoute.Expenses
@@ -84,7 +99,7 @@ class NotificationsViewModel(
                         groupId = groupId,
                         destination = destination
                     )
-                }
+                }.sortedByDescending { it.createdAt }
                 _uiState.value = NotificationsUiState(
                     notifications = summaries,
                     isLoading = false
@@ -96,5 +111,15 @@ class NotificationsViewModel(
                 )
             }
         }
+
     }
 }
+
+private fun NotificationType.isEnabledFor(settings: types.NotificationSettings): Boolean =
+    when (this) {
+        NotificationType.EXPENSE -> settings.expenses
+        NotificationType.PAYMENT -> settings.payments
+        NotificationType.REMINDER -> settings.reminders
+        NotificationType.GROUP -> settings.groupActivity
+        NotificationType.INVITATIONS -> settings.invitations
+    }

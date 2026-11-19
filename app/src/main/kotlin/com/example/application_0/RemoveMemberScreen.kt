@@ -7,19 +7,29 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import data.database.MembershipMutationResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun RemoveMemberScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    memberViewModel: MemberManagementViewModel
+    memberViewModel: MemberManagementViewModel,
+    groupsViewModel: GroupsViewModel,
+    invitationsViewModel: GroupInvitationsViewModel,
+    notificationsViewModel: NotificationsViewModel
 ) {
-    val groupsViewModel: GroupsViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
     val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
@@ -32,6 +42,8 @@ fun RemoveMemberScreen(
     }
     val invitation = target?.isInvitation ?: true
     val noun = if (invitation) "invitation" else "member"
+    var error by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     ScreenLayout(
         title = "Remove member",
@@ -45,12 +57,50 @@ fun RemoveMemberScreen(
                 ActionButton(
                     "Keep $noun",
                     secondary = true,
-                    onClick = onBack
+                    onClick = {
+                        memberViewModel.clearMember()
+                        onBack()
+                    }
                 )
                 ActionButton(
                     "Remove $noun",
                     danger = true,
-                    onClick = { onNavigate(AppRoute.Members) }
+                    enabled = target != null,
+                    onClick = {
+                        val selectedTarget = target ?: return@ActionButton
+                        coroutineScope.launch {
+                            val result = if (selectedTarget.isInvitation) {
+                                selectedTarget.invitationId?.let {
+                                    invitationsViewModel.removeInvitation(it)
+                                } ?: MembershipMutationResult.NOT_FOUND
+                            } else {
+                                val groupId = selectedTarget.groupId
+                                val memberUserId = selectedTarget.memberUserId
+                                if (groupId == null || memberUserId == null) {
+                                    MembershipMutationResult.NOT_FOUND
+                                } else {
+                                    invitationsViewModel.removeMember(groupId, memberUserId)
+                                }
+                            }
+                            withContext(Dispatchers.Main.immediate) {
+                                if (result == MembershipMutationResult.SUCCESS) {
+                                    error = null
+                                    memberViewModel.clearMember()
+                                    groupsViewModel.refresh()
+                                    notificationsViewModel.refresh()
+                                    onBack()
+                                } else {
+                                    error = when (result) {
+                                        MembershipMutationResult.NOT_ALLOWED ->
+                                            "You do not have permission to remove this $noun."
+                                        MembershipMutationResult.NOT_FOUND ->
+                                            "This $noun is no longer available."
+                                        else -> "This $noun could not be removed."
+                                    }
+                                }
+                            }
+                        }
+                    }
                 )
             }
         }
@@ -88,6 +138,14 @@ fun RemoveMemberScreen(
                 },
                 style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
                 color = MutedGreen
+            )
+        }
+        error?.let { message ->
+            Spacer(modifier = Modifier.height(14.dp))
+            androidx.compose.material3.Text(
+                text = message,
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.error
             )
         }
     }

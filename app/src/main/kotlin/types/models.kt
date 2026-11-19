@@ -19,7 +19,8 @@ data class NotificationSettings(
     val expenses: Boolean,
     val payments: Boolean,
     val reminders: Boolean,
-    val groupActivity: Boolean
+    val groupActivity: Boolean,
+    val invitations: Boolean = true
 )
 
 data class  Group(
@@ -47,7 +48,8 @@ data class GroupInvitation(
     val inviteeName: String,
     val inviteeEmail: String,
     val invitedByUserId: String,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
+    val inviteeUserId: String? = null
 )
 
 enum class MemberRole {
@@ -105,5 +107,6 @@ enum class NotificationType {
     EXPENSE,
     PAYMENT,
     REMINDER,
-    GROUP
+    GROUP,
+    INVITATIONS
 }

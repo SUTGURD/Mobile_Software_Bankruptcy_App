@@ -37,7 +37,8 @@ data class NotificationSettingsEntity(
     @ColumnInfo(name = "notifications_expenses") val expenses: Boolean,
     @ColumnInfo(name = "notifications_payments") val payments: Boolean,
     @ColumnInfo(name = "notifications_reminders") val reminders: Boolean,
-    @ColumnInfo(name = "notifications_group_activity") val groupActivity: Boolean
+    @ColumnInfo(name = "notifications_group_activity") val groupActivity: Boolean,
+    @ColumnInfo(name = "notifications_invitations") val invitations: Boolean
 )
 
 @Entity(
@@ -85,7 +86,8 @@ data class GroupInvitationEntity(
     val inviteeName: String,
     val inviteeEmail: String,
     val invitedByUserId: String,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
+    val inviteeUserId: String?
 )
 
 @Entity(tableName = "expenses")

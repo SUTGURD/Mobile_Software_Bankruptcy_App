@@ -27,9 +27,9 @@ fun MembersScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    memberViewModel: MemberManagementViewModel
+    memberViewModel: MemberManagementViewModel,
+    groupsViewModel: GroupsViewModel
 ) {
-    val groupsViewModel: GroupsViewModel = viewModel()
     val state by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
     val group = state.groups.firstOrNull { it.id == activeGroupId } ?: state.groups.firstOrNull()
@@ -82,7 +82,13 @@ fun MembersScreen(
                             onClick = if (!isCurrentUser && canRemoveMembers) {
                                 {
                                     memberViewModel.selectMember(
-                                        MemberActionTarget(member.name, member.email, false)
+                                        MemberActionTarget(
+                                            name = member.name,
+                                            email = member.email,
+                                            isInvitation = false,
+                                            groupId = group.id,
+                                            memberUserId = member.userId
+                                        )
                                     )
                                     onNavigate(AppRoute.RemoveMember)
                                 }
@@ -101,7 +107,9 @@ fun MembersScreen(
                                     MemberActionTarget(
                                         invitation.name,
                                         invitation.email,
-                                        true
+                                        true,
+                                        group.id,
+                                        invitationId = invitation.id
                                     )
                                 )
                                 onNavigate(AppRoute.RemoveMember)

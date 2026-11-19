@@ -131,6 +131,13 @@ fun ProfileScreen(onNavigate: (AppRoute) -> Unit, onBack: (() -> Unit)?, backEna
             Spacer(modifier = Modifier.height(16.dp))
             Card(contentPadding = 16.dp) {
                 InfoRow(
+                    title = "Group invitations",
+                    detail = "Review invitations to join groups",
+                    trailing = "View",
+                    onClick = { onNavigate(AppRoute.GroupInvitations) }
+                )
+                Spacer(modifier = Modifier.height(18.dp))
+                InfoRow(
                     title = "Profile settings",
                     detail = "Name, contact information, and profile picture",
                     trailing = "Edit",

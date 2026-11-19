@@ -50,6 +50,12 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGroupInvitations(invitations: List<GroupInvitationEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertGroupInvitation(invitation: GroupInvitationEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGroupMember(member: GroupMemberEntity)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExpenses(expenses: List<ExpenseEntity>)
 
@@ -64,6 +70,9 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNotifications(notifications: List<NotificationEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNotification(notification: NotificationEntity)
 
     @Query("SELECT * FROM users")
     suspend fun getUsers(): List<UserEntity>
@@ -80,11 +89,40 @@ interface AppDao {
     @Query("SELECT * FROM groups")
     suspend fun getGroups(): List<GroupEntity>
 
+    @Query("SELECT * FROM groups WHERE id = :id")
+    suspend fun getGroupById(id: String): GroupEntity?
+
     @Query("SELECT * FROM group_members")
     suspend fun getGroupMembers(): List<GroupMemberEntity>
 
+    @Query("SELECT * FROM group_members WHERE groupId = :groupId AND userId = :userId")
+    suspend fun getGroupMember(groupId: String, userId: String): GroupMemberEntity?
+
     @Query("SELECT * FROM group_invitations")
     suspend fun getGroupInvitations(): List<GroupInvitationEntity>
+
+    @Query("SELECT * FROM group_invitations WHERE id = :id")
+    suspend fun getGroupInvitationById(id: String): GroupInvitationEntity?
+
+    @Query(
+        """
+        SELECT * FROM group_invitations
+        WHERE groupId = :groupId AND lower(inviteeEmail) = lower(:inviteeEmail)
+        LIMIT 1
+        """
+    )
+    suspend fun getGroupInvitation(groupId: String, inviteeEmail: String): GroupInvitationEntity?
+
+    @Query("DELETE FROM group_invitations WHERE id = :id")
+    suspend fun deleteGroupInvitation(id: String)
+
+    @Query(
+        "DELETE FROM notifications WHERE type = 'INVITATIONS' AND relatedEntityId = :invitationId"
+    )
+    suspend fun deleteInvitationNotifications(invitationId: String)
+
+    @Query("DELETE FROM group_members WHERE groupId = :groupId AND userId = :userId")
+    suspend fun deleteGroupMember(groupId: String, userId: String)
 
     @Query("SELECT * FROM expenses")
     suspend fun getExpenses(): List<ExpenseEntity>
