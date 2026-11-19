@@ -79,7 +79,36 @@ private class DatabaseSeedCallback(private val context: Context) : RoomDatabase.
     }
 }
 
-class RoomDatabaseOperations(private val dao: AppDao) : DatabaseOperations {
+class RoomDatabaseOperations(private val database: AppDatabase) : DatabaseOperations {
+    private val dao: AppDao = database.appDao()
+
+    override suspend fun resetDatabaseToDummyData(): Boolean =
+        try {
+            database.withTransaction {
+                dao.clearNotifications()
+                dao.clearReminders()
+                dao.clearPayments()
+                dao.clearExpenseSplits()
+                dao.clearExpenses()
+                dao.clearGroupInvitations()
+                dao.clearGroupMembers()
+                dao.clearGroups()
+                dao.clearUsers()
+                dao.insertUsers(DummyData.users.map { it.toEntity() })
+                dao.insertGroups(DummyData.groups.map { it.toEntity() })
+                dao.insertGroupMembers(DummyData.groupMembers.map { it.toEntity() })
+                dao.insertGroupInvitations(DummyData.groupInvitations.map { it.toEntity() })
+                dao.insertExpenses(DummyData.expenses.map { it.toEntity() })
+                dao.insertExpenseSplits(DummyData.expenseSplits.map { it.toEntity() })
+                dao.insertPayments(DummyData.payments.map { it.toEntity() })
+                dao.insertReminders(DummyData.reminders.map { it.toEntity() })
+                dao.insertNotifications(DummyData.notifications.map { it.toEntity() })
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+
     override suspend fun createUser(user: User): Boolean =
         try {
             dao.insertUser(user.toEntity()) != -1L
@@ -126,7 +155,7 @@ object DatabaseProvider {
 
     fun initialise(context: Context) {
         if (operations == null) {
-            operations = RoomDatabaseOperations(AppDatabase.getInstance(context).appDao())
+            operations = RoomDatabaseOperations(AppDatabase.getInstance(context))
         }
     }
 

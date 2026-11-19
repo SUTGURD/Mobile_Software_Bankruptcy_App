@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     onNavigate: (AppRoute) -> Unit,
-    onLogin: suspend (String, String) -> Boolean,
+    onLogin: suspend (String, String) -> LoginResult,
     onAuthenticated: () -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean
@@ -32,6 +32,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var loginFailed by remember { mutableStateOf(false) }
+    var resetSucceeded by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     ScreenLayout(
@@ -48,6 +49,7 @@ fun LoginScreen(
                 onValueChange = {
                     email = it
                     loginFailed = false
+                    resetSucceeded = false
                 },
                 modifier = Modifier.testTag("login_email"),
                 keyboardOptions = KeyboardOptions(
@@ -62,6 +64,7 @@ fun LoginScreen(
                 onValueChange = {
                     password = it
                     loginFailed = false
+                    resetSucceeded = false
                 },
                 modifier = Modifier.testTag("login_password"),
                 visualTransformation = PasswordVisualTransformation(),
@@ -77,12 +80,29 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.error
                 )
             }
+            if (resetSucceeded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Database reset to dummy data.",
+                    color = ForestGreen
+                )
+            }
             Spacer(modifier = Modifier.height(72.dp))
             ActionButton(
                 "Log in",
                 onClick = {
                     coroutineScope.launch {
-                        if (onLogin(email, password)) onAuthenticated() else loginFailed = true
+                        when (onLogin(email, password)) {
+                            LoginResult.AUTHENTICATED -> onAuthenticated()
+                            LoginResult.DATABASE_RESET -> {
+                                loginFailed = false
+                                resetSucceeded = true
+                            }
+                            LoginResult.INVALID_CREDENTIALS -> {
+                                resetSucceeded = false
+                                loginFailed = true
+                            }
+                        }
                     }
                 }
             )

@@ -20,19 +20,39 @@ enum class AccountCreationResult {
     DATABASE_ERROR
 }
 
+enum class LoginResult {
+    AUTHENTICATED,
+    DATABASE_RESET,
+    INVALID_CREDENTIALS
+}
+
+internal fun isDatabaseResetCredentials(email: String, password: String): Boolean =
+    email.trim() == "RESETDATABASE" && password == "RESETDATABASE"
+
 object Authentication {
     private val _currentUser = MutableStateFlow<AuthenticatedUser?>(null)
 
     val currentUser: StateFlow<AuthenticatedUser?> = _currentUser.asStateFlow()
 
-    suspend fun authenticate(email: String, password: String): Boolean {
-        val user = DatabaseProvider.current().getUserByEmail(email.trim())
-            ?: return false
+    suspend fun authenticate(email: String, password: String): LoginResult {
+        if (isDatabaseResetCredentials(email, password)) {
+            logout()
+            return if (DatabaseProvider.current().resetDatabaseToDummyData()) {
+                LoginResult.DATABASE_RESET
+            } else {
+                LoginResult.INVALID_CREDENTIALS
+            }
+        }
 
-        if (!verifyPassword(password, user.passwordHash)) return false
+        val user = DatabaseProvider.current().getUserByEmail(email.trim())
+            ?: return LoginResult.INVALID_CREDENTIALS
+
+        if (!verifyPassword(password, user.passwordHash)) {
+            return LoginResult.INVALID_CREDENTIALS
+        }
 
         _currentUser.value = AuthenticatedUser(user.id)
-        return true
+        return LoginResult.AUTHENTICATED
     }
 
     fun logout() {

@@ -76,8 +76,8 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Commit `switch from dummy data to SQLite database`
 - [x] Implement persistent account creation
 - [x] Commit `add persistent account creation`
-- [ ] Add developer method for resetting the database to reflect the dummy data
-- [ ] Commit `add developer method for resetting the database`
+- [x] Add developer method for resetting the database to reflect the dummy data
+- [x] Commit `add developer method for resetting the database`
 - [ ] Implement persistent profile settings
 - [ ] Commit `add persistent profile settings`
 - [ ] Implement persistent group creation

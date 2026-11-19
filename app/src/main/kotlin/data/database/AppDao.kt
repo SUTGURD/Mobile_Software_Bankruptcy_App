@@ -8,6 +8,33 @@ import androidx.room.Update
 
 @Dao
 interface AppDao {
+    @Query("DELETE FROM notifications")
+    suspend fun clearNotifications()
+
+    @Query("DELETE FROM reminders")
+    suspend fun clearReminders()
+
+    @Query("DELETE FROM payments")
+    suspend fun clearPayments()
+
+    @Query("DELETE FROM expense_splits")
+    suspend fun clearExpenseSplits()
+
+    @Query("DELETE FROM expenses")
+    suspend fun clearExpenses()
+
+    @Query("DELETE FROM group_invitations")
+    suspend fun clearGroupInvitations()
+
+    @Query("DELETE FROM group_members")
+    suspend fun clearGroupMembers()
+
+    @Query("DELETE FROM groups")
+    suspend fun clearGroups()
+
+    @Query("DELETE FROM users")
+    suspend fun clearUsers()
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertUser(user: UserEntity): Long
 
