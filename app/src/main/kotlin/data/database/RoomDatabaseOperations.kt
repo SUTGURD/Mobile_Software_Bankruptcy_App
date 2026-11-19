@@ -82,6 +82,17 @@ private class DatabaseSeedCallback(private val context: Context) : RoomDatabase.
 class RoomDatabaseOperations(private val database: AppDatabase) : DatabaseOperations {
     private val dao: AppDao = database.appDao()
 
+    override suspend fun createGroup(group: Group, member: GroupMember): Boolean =
+        try {
+            database.withTransaction {
+                dao.insertGroups(listOf(group.toEntity()))
+                dao.insertGroupMembers(listOf(member.toEntity()))
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+
     override suspend fun resetDatabaseToDummyData(): Boolean =
         try {
             database.withTransaction {

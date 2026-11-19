@@ -20,6 +20,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun LoginScreen(
@@ -93,7 +95,8 @@ fun LoginScreen(
                 onClick = {
                     coroutineScope.launch {
                         when (onLogin(email, password)) {
-                            LoginResult.AUTHENTICATED -> onAuthenticated()
+                            LoginResult.AUTHENTICATED ->
+                                withContext(Dispatchers.Main) { onAuthenticated() }
                             LoginResult.DATABASE_RESET -> {
                                 loginFailed = false
                                 resetSucceeded = true

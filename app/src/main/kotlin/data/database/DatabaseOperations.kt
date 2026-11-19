@@ -11,6 +11,7 @@ import types.Reminder
 import types.User
 
 interface DatabaseOperations {
+    suspend fun createGroup(group: Group, member: GroupMember): Boolean
     suspend fun updateUser(user: User): Boolean
     suspend fun resetDatabaseToDummyData(): Boolean
     suspend fun createUser(user: User): Boolean

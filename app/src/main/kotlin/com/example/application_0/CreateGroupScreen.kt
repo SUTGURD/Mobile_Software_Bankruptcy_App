@@ -9,12 +9,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.rememberCoroutineScope
+
+internal fun groupCreationValidationMessage(name: String, type: String): String? {
+    return if (name.trim().isEmpty()) "Missing group name." else null
+}
 
 @Composable
 fun CreateGroupScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEnabled: Boolean) {
-    var groupName by remember { mutableStateOf("Friday dinner") }
-    var groupType by remember { mutableStateOf("Dinner") }
-    var showUnavailableMessage by remember { mutableStateOf(false) }
+    var groupName by remember { mutableStateOf("") }
+    var groupType by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isCreating by remember { mutableStateOf(false) }
+    val groupsViewModel: GroupsViewModel = viewModel()
+    val coroutineScope = rememberCoroutineScope()
 
     ScreenLayout(
         title = "Create group",
@@ -26,8 +40,28 @@ fun CreateGroupScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEn
         bottomContent = {
             ActionButton(
                 "Create group",
-                enabled = groupName.isNotBlank() && groupType.isNotBlank(),
-                onClick = { showUnavailableMessage = true }
+                enabled = !isCreating,
+                onClick = {
+                    val trimmedName = groupName.trim()
+                    val trimmedType = groupType.trim()
+                    val validationMessage =
+                        groupCreationValidationMessage(trimmedName, trimmedType)
+                    if (validationMessage != null) {
+                        errorMessage = validationMessage
+                    } else {
+                        isCreating = true
+                        errorMessage = null
+                        coroutineScope.launch {
+                            val groupId = groupsViewModel.createGroup(trimmedName, trimmedType)
+                            isCreating = false
+                            if (groupId != null) {
+                                withContext(Dispatchers.Main) { onBack() }
+                            } else {
+                                errorMessage = "The group could not be created."
+                            }
+                        }
+                    }
+                }
             )
         }
     ) {
@@ -36,14 +70,14 @@ fun CreateGroupScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEn
             label = "Group name",
             value = groupName,
             onValueChange = { groupName = it },
-            placeholder = "Friday dinner"
+            placeholder = "Enter a group name"
         )
         Spacer(modifier = Modifier.height(14.dp))
         FormField(
             label = "Group type",
             value = groupType,
             onValueChange = { groupType = it },
-            placeholder = "Dinner"
+            placeholder = "Optional"
         )
         Spacer(modifier = Modifier.height(14.dp))
         androidx.compose.material3.Text(
@@ -58,9 +92,13 @@ fun CreateGroupScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEn
                 color = ForestGreen
             )
         }
-        if (showUnavailableMessage) {
+        errorMessage?.let { message ->
             Spacer(modifier = Modifier.height(16.dp))
-            ScreenMessage("Creating groups is not available while using dummy data.")
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
         }
     }
 }

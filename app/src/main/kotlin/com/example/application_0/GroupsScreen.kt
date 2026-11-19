@@ -26,6 +26,10 @@ fun GroupsScreen(onNavigate: (AppRoute) -> Unit, onBack: (() -> Unit)?, backEnab
     val debtState by debtViewModel.uiState.collectAsState()
     val groupIds = state.groups.map { it.id }
 
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
+
     LaunchedEffect(groupIds) {
         val userId = Authentication.currentUser.value?.userId ?: return@LaunchedEffect
         debtViewModel.calculateDebts(

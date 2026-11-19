@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import types.MemberRole
 import java.time.LocalDateTime
+import java.util.UUID
+import types.Group
+import types.GroupMember
 
 data class GroupSummary(
     val id: String,
@@ -57,6 +60,41 @@ class GroupsViewModel(
 
     init {
         observeAuthenticatedUser(::loadGroups)
+    }
+
+    fun refresh() {
+        loadGroups(Authentication.currentUser.value)
+    }
+
+    suspend fun createGroup(name: String, type: String?): String? {
+        val user = Authentication.currentUser.value ?: return null
+        val trimmedName = name.trim()
+        val trimmedType = type?.trim()?.ifEmpty { null }
+        if (trimmedName.isEmpty()) return null
+
+        val now = LocalDateTime.now()
+        val groupId = "group-${UUID.randomUUID()}"
+        val group = Group(
+            id = groupId,
+            name = trimmedName,
+            description = null,
+            authorId = user.userId,
+            createdAt = now,
+            allowAllMembersToAdd = true,
+            allowAllMembersToRemove = false,
+            currency = "DKK",
+            type = trimmedType
+        )
+        val membership = GroupMember(
+            groupId = groupId,
+            userId = user.userId,
+            role = MemberRole.ADMIN,
+            joinedAt = now
+        )
+        if (!database.createGroup(group, membership)) return null
+
+        ActiveGroup.select(groupId)
+        return groupId
     }
 
     private fun loadGroups(user: AuthenticatedUser?) {

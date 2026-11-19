@@ -15,17 +15,42 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.doubleClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.core.app.ApplicationProvider
+import data.database.DatabaseProvider
 import com.example.application_0.ui.theme.Application_0Theme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlinx.coroutines.runBlocking
 
 @RunWith(AndroidJUnit4::class)
 class NavigationTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Before
+    fun initialiseDatabase() {
+        DatabaseProvider.initialise(ApplicationProvider.getApplicationContext())
+        runBlocking {
+            DatabaseProvider.current().resetDatabaseToDummyData()
+        }
+    }
+
+    @Test
+    fun successfulGroupCreationUsesCreateGroupBackNavigation() {
+        loginAs("emma.nielsen@example.com", "1231")
+
+        composeRule.onNodeWithTag("bottom_nav_groups").performClick()
+        composeRule.onNodeWithText("Create group").performClick()
+        composeRule.onNodeWithText("Enter a group name").performTextInput("Test group")
+        composeRule.onAllNodesWithText("Create group")[1].performClick()
+
+        composeRule.onNodeWithTag("bottom_nav_groups").assertIsSelected()
+        composeRule.onNodeWithText("Test group").assertIsDisplayed()
+    }
 
     @Test
     fun loginAndGroupScreensFollowTheNavigationModel() {
