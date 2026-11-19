@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,13 +32,16 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import types.NotificationSettings
 
 @Composable
 fun ProfileSettingsScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    profile: UserProfile?
+    profile: UserProfile?,
+    profileViewModel: UserProfileViewModel
 ) {
     var name by rememberSaveable(profile?.id) { mutableStateOf(profile?.name.orEmpty()) }
     var email by rememberSaveable(profile?.id) { mutableStateOf(profile?.email.orEmpty()) }
@@ -47,6 +51,8 @@ fun ProfileSettingsScreen(
     var selectedImageUri by remember(profile?.id) {
         mutableStateOf(profile?.profileImageUri)
     }
+    var saveError by remember(profile?.id) { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -61,7 +67,30 @@ fun ProfileSettingsScreen(
         onBack = onBack,
         backEnabled = backEnabled,
         bottomContent = {
-            ActionButton("Done", onClick = onBack)
+            ActionButton(
+                "Done",
+                onClick = {
+                    val trimmedName = name.trim()
+                    val trimmedEmail = email.trim()
+                    if (trimmedName.length < 2) {
+                        saveError = "Name must be at least 2 characters."
+                    } else if (!Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$").matches(trimmedEmail)) {
+                        saveError = "Enter a valid email address."
+                    } else {
+                        saveError = null
+                        coroutineScope.launch {
+                            val saved = profileViewModel.updateProfile(
+                                name = trimmedName,
+                                email = trimmedEmail,
+                                phoneNumber = phoneNumber,
+                                profileImageUri = selectedImageUri
+                            )
+                            if (saved) onBack() else
+                                saveError = "These changes could not be saved. The email may already be in use."
+                        }
+                    }
+                }
+            )
         }
     ) {
         Spacer(modifier = Modifier.height(32.dp))
@@ -111,7 +140,14 @@ fun ProfileSettingsScreen(
                 modifier = Modifier.semantics { contentDescription = "Profile phone number" }
             )
             Spacer(modifier = Modifier.height(18.dp))
-            Caption("Changes are not stored while the app uses dummy data.")
+            saveError?.let { error ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 }
@@ -122,7 +158,8 @@ fun NotificationsSettingsScreen(
     onBack: () -> Unit,
     backEnabled: Boolean,
     profile: UserProfile?,
-    selectedMenu: AppRoute
+    selectedMenu: AppRoute,
+    profileViewModel: UserProfileViewModel
 ) {
     var notificationsEnabled by rememberSaveable(profile?.id) {
         mutableStateOf(profile?.notificationsEnabled ?: true)
@@ -138,6 +175,30 @@ fun NotificationsSettingsScreen(
     }
     var groupActivityEnabled by rememberSaveable(profile?.id) {
         mutableStateOf(profile?.notificationSettings?.groupActivity ?: true)
+    }
+    var saveError by remember(profile?.id) { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    fun saveNotificationSettings(
+        notifications: Boolean,
+        expenses: Boolean,
+        payments: Boolean,
+        reminders: Boolean,
+        groupActivity: Boolean
+    ) {
+        saveError = null
+        coroutineScope.launch {
+            val saved = profileViewModel.updateNotificationSettings(
+                notificationsEnabled = notifications,
+                notificationSettings = NotificationSettings(
+                    expenses = expenses,
+                    payments = payments,
+                    reminders = reminders,
+                    groupActivity = groupActivity
+                )
+            )
+            if (!saved) saveError = "Notification preferences could not be saved."
+        }
     }
 
     ScreenLayout(
@@ -160,7 +221,13 @@ fun NotificationsSettingsScreen(
                 title = "Notifications",
                 detail = "Enable or disable all notifications",
                 checked = notificationsEnabled,
-                onCheckedChange = { notificationsEnabled = it },
+                onCheckedChange = {
+                    notificationsEnabled = it
+                    saveNotificationSettings(
+                        it, expensesEnabled, paymentsEnabled,
+                        remindersEnabled, groupActivityEnabled
+                    )
+                },
                 testTag = "notifications_enabled"
             )
         }
@@ -174,7 +241,13 @@ fun NotificationsSettingsScreen(
                     detail = "New expenses and changes",
                     checked = expensesEnabled,
                     enabled = notificationsEnabled,
-                    onCheckedChange = { expensesEnabled = it },
+                    onCheckedChange = {
+                        expensesEnabled = it
+                        saveNotificationSettings(
+                            notificationsEnabled, it, paymentsEnabled,
+                            remindersEnabled, groupActivityEnabled
+                        )
+                    },
                     testTag = "notification_expenses"
                 )
                 SettingSwitchRow(
@@ -182,7 +255,13 @@ fun NotificationsSettingsScreen(
                     detail = "Payments made to you or by you",
                     checked = paymentsEnabled,
                     enabled = notificationsEnabled,
-                    onCheckedChange = { paymentsEnabled = it },
+                    onCheckedChange = {
+                        paymentsEnabled = it
+                        saveNotificationSettings(
+                            notificationsEnabled, expensesEnabled, it,
+                            remindersEnabled, groupActivityEnabled
+                        )
+                    },
                     testTag = "notification_payments"
                 )
                 SettingSwitchRow(
@@ -190,7 +269,13 @@ fun NotificationsSettingsScreen(
                     detail = "Payment reminders",
                     checked = remindersEnabled,
                     enabled = notificationsEnabled,
-                    onCheckedChange = { remindersEnabled = it },
+                    onCheckedChange = {
+                        remindersEnabled = it
+                        saveNotificationSettings(
+                            notificationsEnabled, expensesEnabled, paymentsEnabled,
+                            it, groupActivityEnabled
+                        )
+                    },
                     testTag = "notification_reminders"
                 )
                 SettingSwitchRow(
@@ -198,13 +283,26 @@ fun NotificationsSettingsScreen(
                     detail = "Invitations and membership changes",
                     checked = groupActivityEnabled,
                     enabled = notificationsEnabled,
-                    onCheckedChange = { groupActivityEnabled = it },
+                    onCheckedChange = {
+                        groupActivityEnabled = it
+                        saveNotificationSettings(
+                            notificationsEnabled, expensesEnabled, paymentsEnabled,
+                            remindersEnabled, it
+                        )
+                    },
                     testTag = "notification_group_activity"
                 )
             }
         }
         Spacer(modifier = Modifier.height(18.dp))
-        Caption("Notification preferences are not stored while the app uses dummy data.")
+        saveError?.let { error ->
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
     }
 }
 

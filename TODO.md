@@ -78,8 +78,8 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Commit `add persistent account creation`
 - [x] Add developer method for resetting the database to reflect the dummy data
 - [x] Commit `add developer method for resetting the database`
-- [ ] Implement persistent profile settings
-- [ ] Commit `add persistent profile settings`
+- [x] Implement persistent profile settings
+- [x] Commit `add persistent profile settings`
 - [ ] Implement persistent group creation
 - [ ] Commit `add persistent group creation`
 - [ ] Implement persistent member and invitation management

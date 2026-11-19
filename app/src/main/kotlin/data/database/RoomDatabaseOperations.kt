@@ -116,6 +116,14 @@ class RoomDatabaseOperations(private val database: AppDatabase) : DatabaseOperat
             false
         }
 
+    override suspend fun updateUser(user: User): Boolean =
+        try {
+            dao.updateUser(user.toEntity())
+            true
+        } catch (_: SQLiteConstraintException) {
+            false
+        }
+
     override suspend fun getUsers(): List<User> =
         dao.getUsers().map { it.toModel() }
 

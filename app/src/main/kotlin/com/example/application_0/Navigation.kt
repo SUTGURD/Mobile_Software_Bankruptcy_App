@@ -256,7 +256,8 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                profile = profileState.profile
+                profile = profileState.profile,
+                profileViewModel = profileViewModel
             )
         }
         composable(AppRoute.NotificationsSettings.route) {
@@ -267,7 +268,8 @@ fun AppNavigation() {
                 onBack = ::goBack,
                 backEnabled = backEnabled,
                 profile = profileState.profile,
-                selectedMenu = selectedMenu
+                selectedMenu = selectedMenu,
+                profileViewModel = profileViewModel
             )
         }
         composable(AppRoute.Profile.route) {

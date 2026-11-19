@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.update
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import types.NotificationSettings
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -81,5 +82,41 @@ class UserProfileViewModel(
                 )
             }
         }
+    }
+
+    suspend fun updateProfile(
+        name: String,
+        email: String,
+        phoneNumber: String?,
+        profileImageUri: String?
+    ): Boolean {
+        val userId = Authentication.currentUser.value?.userId ?: return false
+        val existing = database.getUserById(userId) ?: return false
+        val updated = existing.copy(
+            name = name.trim(),
+            email = email.trim().lowercase(),
+            phoneNumber = phoneNumber?.trim()?.ifEmpty { null },
+            profileImageUri = profileImageUri,
+            updatedAt = LocalDateTime.now()
+        )
+        val updatedSuccessfully = database.updateUser(updated)
+        if (updatedSuccessfully) loadProfile(Authentication.currentUser.value)
+        return updatedSuccessfully
+    }
+
+    suspend fun updateNotificationSettings(
+        notificationsEnabled: Boolean,
+        notificationSettings: NotificationSettings
+    ): Boolean {
+        val userId = Authentication.currentUser.value?.userId ?: return false
+        val existing = database.getUserById(userId) ?: return false
+        val updated = existing.copy(
+            notificationsEnabled = notificationsEnabled,
+            notificationSettings = notificationSettings,
+            updatedAt = LocalDateTime.now()
+        )
+        val updatedSuccessfully = database.updateUser(updated)
+        if (updatedSuccessfully) loadProfile(Authentication.currentUser.value)
+        return updatedSuccessfully
     }
 }
