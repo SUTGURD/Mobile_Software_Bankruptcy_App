@@ -211,7 +211,7 @@ fun AppNavigation() {
         }
     }
 
-    BackHandler(enabled = authenticatedUser != null) {
+    BackHandler(enabled = authenticatedUser != null || backEnabled) {
         goBack()
     }
 

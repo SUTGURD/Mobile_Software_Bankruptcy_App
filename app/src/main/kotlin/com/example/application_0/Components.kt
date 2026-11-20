@@ -145,6 +145,7 @@ internal fun ScreenLayout(
             }
         }
 
+        val needsNavBarInset = !showBottomBar && bottomContent == null
         val bodyModifier = if (scrollContent) {
             Modifier
                 .weight(1f)
@@ -155,8 +156,13 @@ internal fun ScreenLayout(
                 .weight(1f)
                 .fillMaxWidth()
         }
+        val bodyInsetModifier = if (needsNavBarInset) {
+            bodyModifier.windowInsetsPadding(WindowInsets.navigationBars)
+        } else {
+            bodyModifier
+        }
         Column(
-            modifier = bodyModifier
+            modifier = bodyInsetModifier
                 .padding(horizontal = 20.dp)
                 .padding(top = 12.dp, bottom = 24.dp)
         ) {
