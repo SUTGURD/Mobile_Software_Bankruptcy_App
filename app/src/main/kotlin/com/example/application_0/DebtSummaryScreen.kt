@@ -1,5 +1,6 @@
 package com.example.application_0
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,8 +14,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,6 +38,7 @@ fun DebtSummaryScreen(
     val activeGroupId by ActiveGroup.groupId.collectAsState()
     val group = groupsState.selectedGroupOrFirst(activeGroupId)
     val userId = Authentication.currentUser.collectAsState().value?.userId
+    var reminderMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(group?.id, userId) {
         if (group != null && userId != null) {
@@ -133,10 +139,35 @@ fun DebtSummaryScreen(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MutedGreen
                                     )
+                                    if (!owing && amount > 0.0) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "Send reminder",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = ForestGreen,
+                                            modifier = Modifier
+                                                .testTag("send_reminder_${member.userId}")
+                                                .clickable {
+                                                    debtViewModel.sendReminder(group.id, member.userId) { _, message ->
+                                                        reminderMessage = message
+                                                    }
+                                                }
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+            }
+            reminderMessage?.let { msg ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = msg,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ForestGreen,
+                    modifier = Modifier.testTag("reminder_feedback_message")
+                )
             }
         } else if (!groupsState.isLoading && groupsState.error == null) {
             ScreenMessage("You are not a member of any groups.")

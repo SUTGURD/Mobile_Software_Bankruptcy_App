@@ -217,6 +217,13 @@ object DummyData {
             description = "Settle your share of the weekly groceries.",
             authorId = "user-jonas",
             expenseSplitId = "split-groceries-mikkel"
+        ),
+        Reminder(
+            id = "reminder-taxi-jonas",
+            groupId = "group-weekend",
+            description = "Jonas still owes Freja for the shared taxi.",
+            authorId = "user-freja",
+            expenseSplitId = "split-taxi-jonas"
         )
     )
 
@@ -247,6 +254,24 @@ object DummyData {
             createdAt = LocalDateTime.of(2026, 11, 8, 12, 0),
             read = false,
             relatedEntityId = "reminder-dinner-freja"
+        ),
+        Notification(
+            id = "notification-reminder-taxi-jonas",
+            userId = "user-jonas",
+            type = NotificationType.REMINDER,
+            message = "Freja sent you a reminder about the shared taxi expense.",
+            createdAt = LocalDateTime.of(2026, 11, 9, 14, 30),
+            read = false,
+            relatedEntityId = "reminder-taxi-jonas"
+        ),
+        Notification(
+            id = "notification-reminder-groceries-mikkel",
+            userId = "user-mikkel",
+            type = NotificationType.REMINDER,
+            message = "Jonas sent you a reminder about the weekly groceries expense.",
+            createdAt = LocalDateTime.of(2026, 11, 10, 11, 15),
+            read = false,
+            relatedEntityId = "reminder-groceries-mikkel"
         ),
         Notification(
             id = "notification-group",

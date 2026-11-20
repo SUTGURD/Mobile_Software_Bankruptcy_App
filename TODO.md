@@ -95,7 +95,7 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 
 ## Later
 
-- [ ] Add the ability to send reminders
+- [x] Add the ability to send reminders
 - [ ] Add the ability to make payments
 - [ ] Add the ability to leave a group
 - [ ] Allow users to view a summary of all transactions

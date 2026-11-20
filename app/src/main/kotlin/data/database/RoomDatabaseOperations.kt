@@ -377,6 +377,19 @@ class RoomDatabaseOperations(private val database: AppDatabase) : DatabaseOperat
     override suspend fun getReminders(): List<Reminder> =
         dao.getReminders().map { it.toModel() }
 
+    override suspend fun sendReminder(
+        reminder: Reminder,
+        notification: Notification
+    ): Boolean = try {
+        database.withTransaction {
+            dao.insertReminders(listOf(reminder.toEntity()))
+            dao.insertNotification(notification.toEntity())
+        }
+        true
+    } catch (_: Exception) {
+        false
+    }
+
     override suspend fun getNotifications(): List<Notification> =
         dao.getNotifications().map { it.toModel() }
 }

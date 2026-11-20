@@ -53,6 +53,10 @@ interface DatabaseOperations {
         memberUserId: String,
         actorUserId: String
     ): MembershipMutationResult
+    suspend fun sendReminder(
+        reminder: Reminder,
+        notification: Notification
+    ): Boolean
     suspend fun updateUser(user: User): Boolean
     suspend fun resetDatabaseToDummyData(): Boolean
     suspend fun createUser(user: User): Boolean

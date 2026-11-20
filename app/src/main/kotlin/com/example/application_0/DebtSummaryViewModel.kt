@@ -12,6 +12,11 @@ import domain.totalAmountPersonOwes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import types.Notification
+import types.NotificationType
+import types.Reminder
+import java.time.LocalDateTime
+import java.util.UUID
 
 enum class DebtType {
     TOTAL_OWED,
@@ -235,6 +240,49 @@ class DebtSummaryViewModel(
             otherUserId = request.otherUserId,
             result = amount
         )
+    }
+
+    fun sendReminder(
+        groupId: String,
+        targetUserId: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        val currentUser = Authentication.currentUser.value ?: run {
+            onResult(false, "No authenticated user.")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val author = database.getUserById(currentUser.userId)
+                val authorName = author?.name ?: "A group member"
+                val reminderId = "reminder-${UUID.randomUUID()}"
+                val notificationId = "notification-reminder-${UUID.randomUUID()}"
+                val reminder = Reminder(
+                    id = reminderId,
+                    groupId = groupId,
+                    description = "Payment reminder from $authorName",
+                    authorId = currentUser.userId,
+                    expenseSplitId = null
+                )
+                val notification = Notification(
+                    id = notificationId,
+                    userId = targetUserId,
+                    type = NotificationType.REMINDER,
+                    message = "$authorName sent you a reminder about your outstanding balance.",
+                    createdAt = LocalDateTime.now(),
+                    read = false,
+                    relatedEntityId = reminderId
+                )
+                val success = database.sendReminder(reminder, notification)
+                if (success) {
+                    onResult(true, "Reminder sent.")
+                } else {
+                    onResult(false, "Could not send reminder.")
+                }
+            } catch (_: Exception) {
+                onResult(false, "Could not send reminder.")
+            }
+        }
     }
 
     private fun setError(message: String) {
