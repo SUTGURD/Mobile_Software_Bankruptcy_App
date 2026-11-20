@@ -12,8 +12,8 @@ fun amountPersonOwesInGroup(
     expenses: List<Expense>,
     expenseSplits: List<ExpenseSplit>,
     payments: List<Payment>
-): Double = sumOutstandingDebts(expenses, expenseSplits, payments) { debt ->
-    debt.groupId == groupId && debt.debtorId == personId
+): Double = sumOutstandingDebts(expenses, expenseSplits, payments, targetDebtorId = personId) { gId, debtorId, _ ->
+    gId == groupId && debtorId == personId
 }
 
 fun amountPersonIsOwedInGroup(
@@ -22,8 +22,8 @@ fun amountPersonIsOwedInGroup(
     expenses: List<Expense>,
     expenseSplits: List<ExpenseSplit>,
     payments: List<Payment>
-): Double = sumOutstandingDebts(expenses, expenseSplits, payments) { debt ->
-    debt.groupId == groupId && debt.creditorId == personId
+): Double = sumOutstandingDebts(expenses, expenseSplits, payments, targetCreditorId = personId) { gId, _, creditorId ->
+    gId == groupId && creditorId == personId
 }
 
 fun amountPersonOwesAnotherPerson(
@@ -40,10 +40,16 @@ fun amountPersonOwesAnotherPerson(
         .map { it.id }
         .toSet()
 
-    return sumOutstandingDebts(expenses, expenseSplits, payments) { debt ->
-        debt.groupId in groupIdsInCurrency &&
-            debt.debtorId == personId &&
-            debt.creditorId == otherPersonId
+    return sumOutstandingDebts(
+        expenses,
+        expenseSplits,
+        payments,
+        targetDebtorId = personId,
+        targetCreditorId = otherPersonId
+    ) { gId, debtorId, creditorId ->
+        gId in groupIdsInCurrency &&
+            debtorId == personId &&
+            creditorId == otherPersonId
     }
 }
 
@@ -60,8 +66,8 @@ fun totalAmountPersonOwes(
         .map { it.id }
         .toSet()
 
-    return sumOutstandingDebts(expenses, expenseSplits, payments) { debt ->
-        debt.groupId in groupIdsInCurrency && debt.debtorId == personId
+    return sumOutstandingDebts(expenses, expenseSplits, payments, targetDebtorId = personId) { gId, debtorId, _ ->
+        gId in groupIdsInCurrency && debtorId == personId
     }
 }
 
@@ -78,8 +84,8 @@ fun totalAmountPersonIsOwed(
         .map { it.id }
         .toSet()
 
-    return sumOutstandingDebts(expenses, expenseSplits, payments) { debt ->
-        debt.groupId in groupIdsInCurrency && debt.creditorId == personId
+    return sumOutstandingDebts(expenses, expenseSplits, payments, targetCreditorId = personId) { gId, _, creditorId ->
+        gId in groupIdsInCurrency && creditorId == personId
     }
 }
 
@@ -87,45 +93,49 @@ private fun sumOutstandingDebts(
     expenses: List<Expense>,
     expenseSplits: List<ExpenseSplit>,
     payments: List<Payment>,
-    matches: (Debt) -> Boolean
+    targetDebtorId: String? = null,
+    targetCreditorId: String? = null,
+    matches: (groupId: String, debtorId: String, creditorId: String) -> Boolean
 ): Double {
+    if (expenseSplits.isEmpty()) return 0.0
+
     val expensesById = expenses.associateBy { it.id }
-    val splitsById = expenseSplits.associateBy { it.id }
-    // Payment has no amount field, so a correctly linked payment settles its full split.
-    val settledSplitIds = payments.mapNotNull { payment ->
-        val splitId = payment.expenseSplitId ?: return@mapNotNull null
-        val split = splitsById[splitId] ?: return@mapNotNull null
-        val expense = expensesById[split.expenseId] ?: return@mapNotNull null
+    val settledSplitIds = if (payments.isEmpty()) {
+        emptySet()
+    } else {
+        val splitsById = expenseSplits.associateBy { it.id }
+        payments.mapNotNull { payment ->
+            val splitId = payment.expenseSplitId ?: return@mapNotNull null
+            val split = splitsById[splitId] ?: return@mapNotNull null
+            val expense = expensesById[split.expenseId] ?: return@mapNotNull null
 
-        splitId.takeIf {
-            payment.groupId == expense.groupId &&
-                payment.paidBy == split.userId &&
-                payment.paidTo == expense.paidBy
-        }
-    }.toSet()
-
-    val total = expenseSplits.fold(BigDecimal.ZERO) { sum, split ->
-        val expense = expensesById[split.expenseId]
-            ?: return@fold sum
-        if (split.id in settledSplitIds || split.userId == expense.paidBy) {
-            return@fold sum
-        }
-
-        val debt = Debt(
-            groupId = expense.groupId,
-            debtorId = split.userId,
-            creditorId = expense.paidBy,
-            amount = BigDecimal.valueOf(split.amount)
-        )
-        if (matches(debt)) sum.add(debt.amount) else sum
+            splitId.takeIf {
+                payment.groupId == expense.groupId &&
+                    payment.paidBy == split.userId &&
+                    payment.paidTo == expense.paidBy
+            }
+        }.toSet()
     }
 
-    return total.toDouble()
-}
+    var total = 0.0
+    for (i in expenseSplits.indices) {
+        val split = expenseSplits[i]
+        if (targetDebtorId != null && split.userId != targetDebtorId) {
+            continue
+        }
 
-private data class Debt(
-    val groupId: String,
-    val debtorId: String,
-    val creditorId: String,
-    val amount: BigDecimal
-)
+        val expense = expensesById[split.expenseId] ?: continue
+        if (targetCreditorId != null && expense.paidBy != targetCreditorId) {
+            continue
+        }
+        if (split.id in settledSplitIds || split.userId == expense.paidBy) {
+            continue
+        }
+
+        if (matches(expense.groupId, split.userId, expense.paidBy)) {
+            total += split.amount
+        }
+    }
+
+    return BigDecimal.valueOf(total).toDouble()
+}
