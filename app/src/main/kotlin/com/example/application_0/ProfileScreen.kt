@@ -1,7 +1,7 @@
 package com.example.application_0
 
+import androidx.core.net.toUri
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -168,7 +168,7 @@ internal fun ProfilePortrait(profile: UserProfile) {
         } else {
             withContext(Dispatchers.IO) {
                 try {
-                    val stream = context.contentResolver.openInputStream(Uri.parse(imageUri))
+                    val stream = context.contentResolver.openInputStream(imageUri.toUri())
                     if (stream == null) {
                         Log.w("ProfileScreen", "Unable to open profile image.")
                         null

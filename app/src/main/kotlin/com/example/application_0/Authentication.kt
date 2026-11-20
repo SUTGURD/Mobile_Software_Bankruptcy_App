@@ -49,7 +49,10 @@ object Authentication {
         val user = DatabaseProvider.current().getUserByEmail(email.trim())
             ?: return LoginResult.INVALID_CREDENTIALS
 
-        if (!verifyPassword(password, user.passwordHash)) {
+        val passwordMatches = withContext(Dispatchers.Default) {
+            verifyPassword(password, user.passwordHash)
+        }
+        if (!passwordMatches) {
             return LoginResult.INVALID_CREDENTIALS
         }
 
@@ -76,6 +79,7 @@ object Authentication {
             return AccountCreationResult.EMAIL_EXISTS
         }
 
+        val passwordHash = withContext(Dispatchers.Default) { hashPassword(password) }
         val now = LocalDateTime.now()
         val user = User(
             id = "user-${UUID.randomUUID()}",
@@ -92,7 +96,7 @@ object Authentication {
                 reminders = true,
                 groupActivity = true
             ),
-            passwordHash = hashPassword(password)
+            passwordHash = passwordHash
         )
         return if (DatabaseProvider.current().createUser(user)) {
             withContext(Dispatchers.Main.immediate) {

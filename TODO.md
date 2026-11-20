@@ -88,6 +88,10 @@ Ordered, commit-sized. Check off as you go. "Later" items are intentionally defe
 - [x] Commit `add persistent expense creation`
 
 
+## Session 6: Security hardening
+
+- [x] Replace unsalted SHA-256 password hashing with salted PBKDF2-HMAC-SHA256 and keep verification of existing hashes
+- [ ] Commit `add salted password hashing`
 
 ## Later
 

@@ -382,8 +382,8 @@ internal fun BalanceCard(
     amount: String,
     detail: String,
     action: String,
-    currency: String = "DKK",
     modifier: Modifier = Modifier,
+    currency: String = "DKK",
     owing: Boolean = false,
     onClick: () -> Unit
 ) {
@@ -565,8 +565,7 @@ private fun BottomNavigationBar(
     }
 }
 
-@Composable
-private fun NavigationIconResource(destination: AppRoute): Int = when (destination) {
+private fun navigationIconResource(destination: AppRoute): Int = when (destination) {
     AppRoute.Home -> R.drawable.ic_home
     AppRoute.Groups -> R.drawable.ic_group
     AppRoute.Debt -> R.drawable.ic_credit_card
@@ -577,7 +576,7 @@ private fun NavigationIconResource(destination: AppRoute): Int = when (destinati
 @Composable
 private fun NavigationIcon(destination: AppRoute, colour: Color) {
     Icon(
-        painter = painterResource(NavigationIconResource(destination)),
+        painter = painterResource(navigationIconResource(destination)),
         contentDescription = null,
         tint = colour,
         modifier = Modifier.size(24.dp)
