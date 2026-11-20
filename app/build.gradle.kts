@@ -7,7 +7,9 @@ plugins {
 android {
     namespace = "com.example.application_0"
     compileSdk {
-        version = release(37)
+        version = release(37) {
+            minorApiLevel = 1
+        }
     }
 
     defaultConfig {
