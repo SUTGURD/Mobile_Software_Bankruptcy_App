@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -35,13 +36,12 @@ fun AddExpenseScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    expenseFlowViewModel: ExpenseFlowViewModel
+    expenseFlowViewModel: ExpenseFlowViewModel,
+    groupsViewModel: GroupsViewModel
 ) {
-    val groupsViewModel: GroupsViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
-        ?: groupsState.groups.firstOrNull()
+    val group = groupsState.selectedGroupOrFirst(activeGroupId)
     val profileViewModel: UserProfileViewModel = viewModel()
     val profileState by profileViewModel.uiState.collectAsState()
     val draft by expenseFlowViewModel.uiState.collectAsState()
@@ -125,7 +125,8 @@ fun AddExpenseScreen(
             label = "Description",
             value = description,
             onValueChange = expenseFlowViewModel::updateDescription,
-            placeholder = ""
+            placeholder = "",
+            modifier = Modifier.testTag("expense_description")
         )
         Spacer(modifier = Modifier.height(12.dp))
         ExpenseValueCard("Paid by", "You · ${profileState.profile?.name ?: "Current user"}")

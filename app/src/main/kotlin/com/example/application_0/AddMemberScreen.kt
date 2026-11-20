@@ -28,8 +28,7 @@ fun AddMemberScreen(
 ) {
     val groupsState by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
-        ?: groupsState.groups.firstOrNull()
+    val group = groupsState.selectedGroupOrFirst(activeGroupId)
     var email by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()

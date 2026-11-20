@@ -26,9 +26,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun HomeScreen(onNavigate: (AppRoute) -> Unit) {
+fun HomeScreen(onNavigate: (AppRoute) -> Unit, groupsViewModel: GroupsViewModel) {
     val profileViewModel: UserProfileViewModel = viewModel()
-    val groupsViewModel: GroupsViewModel = viewModel()
     val debtViewModel: DebtSummaryViewModel = viewModel()
     val profileState by profileViewModel.uiState.collectAsState()
     val groupsState by groupsViewModel.uiState.collectAsState()

@@ -44,6 +44,9 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGroups(groups: List<GroupEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertGroup(group: GroupEntity)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGroupMembers(members: List<GroupMemberEntity>)
 

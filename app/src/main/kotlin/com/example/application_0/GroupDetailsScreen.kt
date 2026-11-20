@@ -21,14 +21,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun GroupDetailsScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEnabled: Boolean) {
-    val groupsViewModel: GroupsViewModel = viewModel()
+fun GroupDetailsScreen(
+    onNavigate: (AppRoute) -> Unit,
+    onBack: () -> Unit,
+    backEnabled: Boolean,
+    groupsViewModel: GroupsViewModel
+) {
     val debtViewModel: DebtSummaryViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val debtState by debtViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
-        ?: groupsState.groups.firstOrNull()
+    val group = groupsState.selectedGroupOrFirst(activeGroupId)
     val userId = Authentication.currentUser.collectAsState().value?.userId
 
     LaunchedEffect(group?.id, userId) {

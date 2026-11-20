@@ -27,15 +27,14 @@ fun ExpensesScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    expenseFlowViewModel: ExpenseFlowViewModel
+    expenseFlowViewModel: ExpenseFlowViewModel,
+    groupsViewModel: GroupsViewModel
 ) {
     val expensesViewModel: ExpensesViewModel = viewModel()
-    val groupsViewModel: GroupsViewModel = viewModel()
     val expensesState by expensesViewModel.uiState.collectAsState()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
-        ?: groupsState.groups.firstOrNull()
+    val group = groupsState.selectedGroupOrFirst(activeGroupId)
 
     LaunchedEffect(group?.id) {
         group?.let {

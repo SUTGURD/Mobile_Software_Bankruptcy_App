@@ -247,21 +247,23 @@ fun AppNavigation() {
         }
         composable(AppRoute.Home.route) {
             if (authenticatedUser != null) {
-                HomeScreen(onNavigate = ::navigate)
+                HomeScreen(onNavigate = ::navigate, groupsViewModel = groupsViewModel)
             }
         }
         composable(AppRoute.Groups.route) {
             GroupsScreen(
                 onNavigate = ::navigate,
                 onBack = null,
-                backEnabled = backEnabled
+                backEnabled = backEnabled,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.Debt.route) {
             DebtScreen(
                 onNavigate = ::navigate,
                 onBack = null,
-                backEnabled = backEnabled
+                backEnabled = backEnabled,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.Notifications.route) {
@@ -326,10 +328,20 @@ fun AppNavigation() {
             )
         }
         composable(AppRoute.CreateGroup.route) {
-            CreateGroupScreen(onNavigate = ::navigate, onBack = ::goBack, backEnabled = backEnabled)
+            CreateGroupScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                groupsViewModel = groupsViewModel
+            )
         }
         composable(AppRoute.GroupDetails.route) {
-            GroupDetailsScreen(onNavigate = ::navigate, onBack = ::goBack, backEnabled = backEnabled)
+            GroupDetailsScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                groupsViewModel = groupsViewModel
+            )
         }
         composable(AppRoute.Members.route) {
             MembersScreen(
@@ -365,7 +377,8 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                expenseFlowViewModel = expenseFlowViewModel
+                expenseFlowViewModel = expenseFlowViewModel,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.AddExpense.route) {
@@ -373,7 +386,8 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                expenseFlowViewModel = expenseFlowViewModel
+                expenseFlowViewModel = expenseFlowViewModel,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.SplitExpense.route) {
@@ -381,7 +395,8 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                expenseFlowViewModel = expenseFlowViewModel
+                expenseFlowViewModel = expenseFlowViewModel,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.UploadReceipt.route) {
@@ -389,7 +404,8 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                expenseFlowViewModel = expenseFlowViewModel
+                expenseFlowViewModel = expenseFlowViewModel,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.ViewReceipt.route) {
@@ -397,7 +413,8 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                expenseFlowViewModel = expenseFlowViewModel
+                expenseFlowViewModel = expenseFlowViewModel,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.ExpenseSaved.route) {
@@ -405,11 +422,17 @@ fun AppNavigation() {
                 onNavigate = ::navigate,
                 onBack = ::goBack,
                 backEnabled = backEnabled,
-                expenseFlowViewModel = expenseFlowViewModel
+                expenseFlowViewModel = expenseFlowViewModel,
+                groupsViewModel = groupsViewModel
             )
         }
         composable(AppRoute.DebtSummary.route) {
-            DebtSummaryScreen(onNavigate = ::navigate, onBack = ::goBack, backEnabled = backEnabled)
+            DebtSummaryScreen(
+                onNavigate = ::navigate,
+                onBack = ::goBack,
+                backEnabled = backEnabled,
+                groupsViewModel = groupsViewModel
+            )
         }
     }
 }

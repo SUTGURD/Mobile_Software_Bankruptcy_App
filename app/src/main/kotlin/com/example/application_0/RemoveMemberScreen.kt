@@ -32,8 +32,7 @@ fun RemoveMemberScreen(
 ) {
     val groupsState by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
-        ?: groupsState.groups.firstOrNull()
+    val group = groupsState.selectedGroupOrFirst(activeGroupId)
     val selectedMember by memberViewModel.selectedMember.collectAsState()
     val target = selectedMember ?: group?.invitations?.firstOrNull()?.let {
         MemberActionTarget(it.name, it.email, true)

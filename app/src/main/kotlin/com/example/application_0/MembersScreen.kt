@@ -32,7 +32,7 @@ fun MembersScreen(
 ) {
     val state by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = state.groups.firstOrNull { it.id == activeGroupId } ?: state.groups.firstOrNull()
+    val group = state.selectedGroupOrFirst(activeGroupId)
     val userId = Authentication.currentUser.collectAsState().value?.userId
     val isAdmin = group?.memberStatus == MemberRole.ADMIN
     val canInvite = group != null && (isAdmin || group.allowAllMembersToAdd)
