@@ -139,16 +139,24 @@ class RoomDatabaseOperations(private val database: AppDatabase) : DatabaseOperat
         ExpenseCreationResult.FAILURE
     }
 
-    override suspend fun createGroup(group: Group, member: GroupMember): Boolean =
-        try {
+    override suspend fun createGroup(group: Group, member: GroupMember): Boolean {
+        if (member.groupId != group.id ||
+            member.userId != group.authorId ||
+            member.role != types.MemberRole.ADMIN
+        ) {
+            return false
+        }
+
+        return try {
             database.withTransaction {
-                dao.insertGroups(listOf(group.toEntity()))
+                dao.insertGroup(group.toEntity())
                 dao.insertGroupMembers(listOf(member.toEntity()))
             }
             true
         } catch (_: Exception) {
             false
         }
+    }
 
     override suspend fun createGroupInvitation(
         invitation: GroupInvitation,

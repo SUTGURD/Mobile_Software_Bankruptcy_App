@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.Locale
 
 @Composable
@@ -29,14 +28,13 @@ fun SplitExpenseScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    expenseFlowViewModel: ExpenseFlowViewModel
+    expenseFlowViewModel: ExpenseFlowViewModel,
+    groupsViewModel: GroupsViewModel
 ) {
-    val groupsViewModel: GroupsViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val draft by expenseFlowViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
-        ?: groupsState.groups.firstOrNull()
+    val group = groupsState.selectedGroupOrFirst(activeGroupId)
     val userId = Authentication.currentUser.collectAsState().value?.userId
     val amount = draft.amount.toDoubleOrNull() ?: 0.0
     val memberCount = group?.members?.size ?: 0
@@ -117,13 +115,12 @@ fun UploadReceiptScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    expenseFlowViewModel: ExpenseFlowViewModel
+    expenseFlowViewModel: ExpenseFlowViewModel,
+    groupsViewModel: GroupsViewModel
 ) {
-    val groupsViewModel: GroupsViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
-        ?: groupsState.groups.firstOrNull()
+    val group = groupsState.selectedGroupOrFirst(activeGroupId)
     val expenseFlowState by expenseFlowViewModel.uiState.collectAsState()
 
     ScreenLayout(
@@ -169,14 +166,13 @@ fun ViewReceiptScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    expenseFlowViewModel: ExpenseFlowViewModel
+    expenseFlowViewModel: ExpenseFlowViewModel,
+    groupsViewModel: GroupsViewModel
 ) {
     val expenseFlowState by expenseFlowViewModel.uiState.collectAsState()
-    val groupsViewModel: GroupsViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
-        ?: groupsState.groups.firstOrNull()
+    val group = groupsState.selectedGroupOrFirst(activeGroupId)
     val expense = expenseFlowState.selectedExpense
 
     ScreenLayout(
@@ -207,13 +203,12 @@ fun ExpenseSavedScreen(
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
     backEnabled: Boolean,
-    expenseFlowViewModel: ExpenseFlowViewModel
+    expenseFlowViewModel: ExpenseFlowViewModel,
+    groupsViewModel: GroupsViewModel
 ) {
-    val groupsViewModel: GroupsViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val activeGroupId by ActiveGroup.groupId.collectAsState()
-    val group = groupsState.groups.firstOrNull { it.id == activeGroupId }
-        ?: groupsState.groups.firstOrNull()
+    val group = groupsState.selectedGroupOrFirst(activeGroupId)
     val draft by expenseFlowViewModel.uiState.collectAsState()
     val amount = draft.amount.toDoubleOrNull() ?: 0.0
     val memberCount = group?.memberCount ?: 0

@@ -9,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import kotlinx.coroutines.launch
@@ -22,12 +21,16 @@ internal fun groupCreationValidationMessage(name: String, type: String): String?
 }
 
 @Composable
-fun CreateGroupScreen(onNavigate: (AppRoute) -> Unit, onBack: () -> Unit, backEnabled: Boolean) {
+fun CreateGroupScreen(
+    onNavigate: (AppRoute) -> Unit,
+    onBack: () -> Unit,
+    backEnabled: Boolean,
+    groupsViewModel: GroupsViewModel
+) {
     var groupName by remember { mutableStateOf("") }
     var groupType by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isCreating by remember { mutableStateOf(false) }
-    val groupsViewModel: GroupsViewModel = viewModel()
     val coroutineScope = rememberCoroutineScope()
 
     ScreenLayout(

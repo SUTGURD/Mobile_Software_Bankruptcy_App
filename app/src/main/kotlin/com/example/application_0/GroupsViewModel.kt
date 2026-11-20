@@ -52,11 +52,19 @@ data class GroupsUiState(
     val error: String? = null
 )
 
+fun GroupsUiState.selectedGroupOrFirst(activeGroupId: String?): GroupSummary? =
+    if (activeGroupId == null) {
+        groups.firstOrNull()
+    } else {
+        groups.firstOrNull { it.id == activeGroupId }
+    }
+
 class GroupsViewModel(
     private val database: DatabaseOperations = DatabaseProvider.current()
 ) : AuthenticatedViewModel() {
     private val _uiState = MutableStateFlow(GroupsUiState())
     val uiState = _uiState.asStateFlow()
+    private var loadGeneration = 0
 
     init {
         observeAuthenticatedUser(::loadGroups)
@@ -94,10 +102,12 @@ class GroupsViewModel(
         if (!database.createGroup(group, membership)) return null
 
         ActiveGroup.select(groupId)
+        refresh()
         return groupId
     }
 
     private fun loadGroups(user: AuthenticatedUser?) {
+        val generation = ++loadGeneration
         _uiState.update { it.copy(isLoading = true, error = null) }
         if (user == null) {
             ActiveGroup.clear()
@@ -116,6 +126,7 @@ class GroupsViewModel(
                 val invitations = database.getGroupInvitations()
                 val allExpenses = database.getExpenses()
                 val allMembers = database.getGroupMembers()
+                if (generation != loadGeneration) return@launch
                 val groupsById = groups.associateBy { it.id }
                 val usersById = users.associateBy { it.id }
                 val groupIds = memberships.map { it.groupId }.toSet()
@@ -174,12 +185,14 @@ class GroupsViewModel(
                     }
                 }
                 val hasMissingGroup = memberships.any { it.groupId !in groupsById }
+                if (generation != loadGeneration) return@launch
                 _uiState.value = GroupsUiState(
                     groups = summaries,
                     isLoading = false,
                     error = if (hasMissingGroup) "Some group information is unavailable." else null
                 )
             } catch (_: Exception) {
+                if (generation != loadGeneration) return@launch
                 _uiState.value = GroupsUiState(
                     isLoading = false,
                     error = "Group data could not be loaded."

@@ -26,6 +26,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlinx.coroutines.runBlocking
+import types.MemberRole
 import types.NotificationType
 
 @RunWith(AndroidJUnit4::class)
@@ -51,7 +52,72 @@ class NavigationTest {
         composeRule.onAllNodesWithText("Create group")[1].performClick()
 
         composeRule.onNodeWithTag("bottom_nav_groups").assertIsSelected()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("Test group").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Test group").assertIsDisplayed()
+
+        val group = runBlocking {
+            DatabaseProvider.current().getGroups().single { it.name == "Test group" }
+        }
+        val members = runBlocking {
+            DatabaseProvider.current().getGroupMembers().filter { it.groupId == group.id }
+        }
+        assertEquals(1, members.size)
+        assertEquals("user-emma", members.single().userId)
+        assertEquals(MemberRole.ADMIN, members.single().role)
+        assertTrue(
+            runBlocking {
+                DatabaseProvider.current().getExpenses().none { it.groupId == group.id }
+            }
+        )
+
+        openGroup(group.id)
+        composeRule.onNodeWithText("Members →", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithText("Test group · 1 active members").assertIsDisplayed()
+        composeRule.onNodeWithText("Emma Nielsen").assertIsDisplayed()
+        composeRule.onNodeWithText("Jonas Madsen").assertIsNotDisplayed()
+        composeRule.onNodeWithText("You · Group admin").assertIsDisplayed()
+        composeRule.onNodeWithText("Invite a friend").assertIsDisplayed()
+    }
+
+    @Test
+    fun newlyCreatedUserCanCreateGroupAndOpenMembers() {
+        Authentication.logout()
+        assertEquals(
+            AccountCreationResult.CREATED,
+            runBlocking {
+                Authentication.createAccount(
+                    "New Group Creator",
+                    "new.group.creator@example.com",
+                    "testpassword123"
+                )
+            }
+        )
+        loginAs("new.group.creator@example.com", "testpassword123")
+
+        composeRule.onNodeWithTag("bottom_nav_groups").performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("You are not a member of any groups.")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("You are not a member of any groups.").assertIsDisplayed()
+        composeRule.onNodeWithText("Create group").performClick()
+        composeRule.onNodeWithText("Enter a group name").performTextInput("First group")
+        composeRule.onAllNodesWithText("Create group")[1].performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("First group").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("First group").assertIsDisplayed()
+
+        val group = runBlocking {
+            DatabaseProvider.current().getGroups().single { it.name == "First group" }
+        }
+        openGroup(group.id)
+        composeRule.onNodeWithText("Members →", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithText("New Group Creator").assertIsDisplayed()
+        composeRule.onNodeWithText("You · Group admin").assertIsDisplayed()
+        composeRule.onNodeWithText("Invite a friend").assertIsDisplayed()
     }
 
     @Test
@@ -493,10 +559,16 @@ class NavigationTest {
         composeRule.onNodeWithTag("bottom_nav_groups").performClick()
         openGroup("group-weekend")
         composeRule.onNodeWithText("Add expense").performClick()
+        composeRule.onNodeWithTag("expense_description")
+            .performTextInput("Dinner at ÆDEHUS")
         composeRule.onNodeWithText("Attach a receipt").performClick()
         composeRule.onNodeWithText("Attach sample receipt").performClick()
         composeRule.onNodeWithText("Receipt attached", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("Save expense").performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText("Dinner at ÆDEHUS has been added to Aarhus weekend.")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText(
             "Dinner at ÆDEHUS has been added to Aarhus weekend."
         ).assertIsDisplayed()

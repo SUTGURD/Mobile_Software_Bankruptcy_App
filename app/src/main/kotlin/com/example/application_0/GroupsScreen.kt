@@ -19,15 +19,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Text
 
 @Composable
-fun GroupsScreen(onNavigate: (AppRoute) -> Unit, onBack: (() -> Unit)?, backEnabled: Boolean) {
-    val viewModel: GroupsViewModel = viewModel()
+fun GroupsScreen(
+    onNavigate: (AppRoute) -> Unit,
+    onBack: (() -> Unit)?,
+    backEnabled: Boolean,
+    groupsViewModel: GroupsViewModel
+) {
     val debtViewModel: DebtSummaryViewModel = viewModel()
-    val state by viewModel.uiState.collectAsState()
+    val state by groupsViewModel.uiState.collectAsState()
     val debtState by debtViewModel.uiState.collectAsState()
     val groupIds = state.groups.map { it.id }
 
     LaunchedEffect(Unit) {
-        viewModel.refresh()
+        groupsViewModel.refresh()
     }
 
     LaunchedEffect(groupIds) {

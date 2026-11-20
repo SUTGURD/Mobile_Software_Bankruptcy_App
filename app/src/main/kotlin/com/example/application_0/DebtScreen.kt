@@ -25,8 +25,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.Locale
 
 @Composable
-fun DebtScreen(onNavigate: (AppRoute) -> Unit, onBack: (() -> Unit)?, backEnabled: Boolean) {
-    val groupsViewModel: GroupsViewModel = viewModel()
+fun DebtScreen(
+    onNavigate: (AppRoute) -> Unit,
+    onBack: (() -> Unit)?,
+    backEnabled: Boolean,
+    groupsViewModel: GroupsViewModel
+) {
     val debtViewModel: DebtSummaryViewModel = viewModel()
     val groupsState by groupsViewModel.uiState.collectAsState()
     val debtState by debtViewModel.uiState.collectAsState()
